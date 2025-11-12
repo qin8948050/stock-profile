@@ -1,0 +1,27 @@
+app:
+  name: "stock-profile"
+  version: "1.0.0"
+  port: 8000
+
+server:
+  host: "0.0.0.0"
+  log_level: "info"
+  reload: true
+
+api:
+  prefix: "/api"
+
+logging:
+  level: "DEBUG"
+  file: "./logs/app.log"
+
+database:
+  user: "qxw"
+  password: "123456"
+  host: "1.1.1.1"
+  port: 3306
+  name: "stock_profile"
+
+opentelemetry:
+  deployment_environment: "dev"
+  otlp_endpoint: "http://x.x.x.x:4317"

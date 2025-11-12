@@ -1,0 +1,13 @@
+server:
+  reload: false
+
+logging:
+  level: "INFO"
+
+database:
+  host: "prod.db.server"
+  user: "prod_user"
+  password: "prod_password"
+
+opentelemetry:
+  deployment_environment: "production"

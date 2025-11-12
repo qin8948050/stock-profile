@@ -1,0 +1,11 @@
+.DS_Store
+.idea
+.vscode
+__pycache__/
+venv*
+*.pyc
+nohup.out
+tmp
+*.log
+backend/config/development.yaml
+.env
