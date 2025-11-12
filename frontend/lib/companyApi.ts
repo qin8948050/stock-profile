@@ -1,28 +1,24 @@
 "use client";
 
-import client from "./apiClient";
+import client, { ApiResponse } from "./apiClient";
+import type { Company } from "../types/company";
 
 export const companies = client.resource("companies");
 
-export const fetchCompanies = (skip = 0, limit = 100) => companies.list<any[]>({ skip, limit });
-export const fetchCompany = (id: number) => companies.get<any>(id);
-export const createCompany = (payload: any) => companies.create<any>(payload);
-export const updateCompany = (id: number, payload: any) => companies.update<any>(id, payload);
-export const deleteCompany = (id: number) => companies.delete<any>(id);
+export const fetchCompanies = (skip = 0, limit = 100): Promise<Company[]> =>
+	companies.list<Company[]>({ skip, limit });
+export const fetchCompany = (id: number): Promise<Company> => companies.get<Company>(id);
 
-// helpers returning full ApiResponse so caller can use backend-provided `msg`
-export const createCompanyWithMsg = (payload: any) => client.requestRaw<any>(`companies/`, {
-	method: "POST",
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify(payload),
-});
+// create/update/delete return the full ApiResponse<T> so callers can access backend `msg`.
+export const createCompany = (payload: Partial<Company>): Promise<Company> =>
+	companies.create<Company>(payload);
 
-export const updateCompanyWithMsg = (id: number | string, payload: any) => client.requestRaw<any>(`companies/${id}`, {
-	method: "PUT",
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify(payload),
-});
+export const updateCompany = (id: number | string, payload: Partial<Company>): Promise<Company> =>
+	companies.update<Company>(id, payload);
 
-export const deleteCompanyWithMsg = (id: number | string) => client.requestRaw<any>(`companies/${id}`, { method: "DELETE" });
+export const deleteCompany = (id: number | string): Promise<null> => companies.delete<null>(id);
+
+// backward-compatible aliases
+// removed aliases: use createCompany/updateCompany/deleteCompany directly
 
 export default companies;

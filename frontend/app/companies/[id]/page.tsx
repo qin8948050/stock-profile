@@ -5,8 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, Descriptions, Form, Input, InputNumber, Button, Space } from "antd";
 import notify from "../../../utils/notify";
 import ActionBar from "../../../components/ActionBar";
-import { fetchCompany } from "../../../lib/api";
-import { updateCompanyWithMsg } from "../../../lib/companyApi";
+import { fetchCompany, updateCompany } from "../../../lib/api";
 import type { Company } from "../../../types/company";
 
 export default function CompanyDetailPage() {
@@ -33,14 +32,10 @@ export default function CompanyDetailPage() {
 
   const onFinish = async (values: any) => {
     try {
-      const res = await updateCompanyWithMsg(id, values);
-      if (res?.status === 200) {
-        notify.success(res.msg || "保存成功");
-        setEditing(false);
-        router.replace(`/companies/${id}`);
-      } else {
-        notify.error(res?.msg || "保存失败");
-      }
+      const updated = await updateCompany(id, values);
+      notify.success("保存成功");
+      setEditing(false);
+      router.replace(`/companies/${id}`);
     } catch (e: any) {
       notify.error(e, "保存失败");
     }

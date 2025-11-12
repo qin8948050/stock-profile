@@ -5,7 +5,6 @@ import { Table, Button, Modal, Form, Input, InputNumber, Space, Popconfirm, mess
 import { PlusOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import { fetchCompanies, createCompany, deleteCompany } from "../../lib/api";
-import { createCompanyWithMsg, deleteCompanyWithMsg } from "../../lib/companyApi";
 import notify from "../../utils/notify";
 import ActionBar from "../../components/ActionBar";
 import type { Company } from "../../types/company";
@@ -41,16 +40,14 @@ export default function CompaniesPage() {
       console.error("getFieldsValue error", e);
     }
     try {
-      const res = await createCompanyWithMsg(values);
-      if (res?.status === 200) {
-        notify.success(res.msg || "创建成功");
-        setCreateVisible(false);
-        form.resetFields();
-        load();
-      } else {
-        notify.error(res?.msg || "创建失败");
-      }
+      const created = await createCompany(values);
+      // created is the created Company (resource); ApiClient throws on non-200
+      notify.success("创建成功");
+      setCreateVisible(false);
+      form.resetFields();
+      load();
     } catch (err: any) {
+      // ApiClient throws an Error containing backend msg when status !== 200
       notify.error(err, "创建失败");
     }
   };
@@ -59,13 +56,9 @@ export default function CompaniesPage() {
 
   const onDelete = async (id: number) => {
     try {
-      const res = await deleteCompanyWithMsg(id);
-      if (res?.status === 200) {
-        notify.success(res.msg || "删除成功");
-        load();
-      } else {
-        notify.error(res?.msg || "删除失败");
-      }
+      await deleteCompany(id);
+      notify.success("删除成功");
+      load();
     } catch (err: any) {
       notify.error(err, "删除失败");
     }
