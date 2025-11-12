@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, Descriptions, Form, Input, InputNumber, Button, Space, message } from "antd";
+import { Card, Descriptions, Form, Input, InputNumber, Button, Space } from "antd";
+import notify from "../../../utils/notify";
 import ActionBar from "../../../components/ActionBar";
-import { fetchCompany, updateCompany } from "../../../lib/api";
+import { fetchCompany } from "../../../lib/api";
+import { updateCompanyWithMsg } from "../../../lib/companyApi";
 import type { Company } from "../../../types/company";
 
 export default function CompanyDetailPage() {
@@ -25,18 +27,22 @@ export default function CompanyDetailPage() {
         setCompany(c);
         form.setFieldsValue(c);
       })
-      .catch((e) => message.error(e.message || "加载失败"))
+  .catch((e) => notify.error(e, "加载失败"))
       .finally(() => setLoading(false));
   }, [id]);
 
   const onFinish = async (values: any) => {
     try {
-      await updateCompany(id, values);
-      message.success("保存成功");
-      setEditing(false);
-      router.replace(`/companies/${id}`);
+      const res = await updateCompanyWithMsg(id, values);
+      if (res?.status === 200) {
+        notify.success(res.msg || "保存成功");
+        setEditing(false);
+        router.replace(`/companies/${id}`);
+      } else {
+        notify.error(res?.msg || "保存失败");
+      }
     } catch (e: any) {
-      message.error(e.message || "保存失败");
+      notify.error(e, "保存失败");
     }
   };
 

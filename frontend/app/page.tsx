@@ -18,8 +18,10 @@ export default function Home() {
         setCompanyCount(Array.isArray(list) ? list.length : 0);
       })
       .catch((e) => {
-        // message.warn is not in AntD message types in some versions; use message.error for compatibility
-        message.error("无法获取公司数据：" + (e?.message || "网络错误"));
+        // message.warn is not in AntD message types in some versions; use notify.error for compatibility
+        // import notify lazily to avoid changing top-level imports for this small change
+        const { default: notify } = require("../utils/notify");
+        notify.error(e, "无法获取公司数据：");
         setCompanyCount(null);
       });
   }, []);

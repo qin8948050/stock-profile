@@ -1,5 +1,7 @@
 from pathlib import Path
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import os
 import uvicorn
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -7,7 +9,7 @@ from routers import company
 from core.log import init_log
 from core.config import config
 from core.exceptions import http_exception_handler, generic_exception_handler
-from core.middleware import log_requests_and_add_trace_id
+from core.middleware import register_middlewares
 from core.lifespan import lifespan
 
 init_log(log_level=config.logging.level,log_file=Path(config.logging.file))
@@ -22,9 +24,9 @@ app = FastAPI(
 )
 
 # -----------------------------
-# 注册中间件
+# 注册中间件（在 core.middleware 中集中注册）
 # -----------------------------
-app.middleware("http")(log_requests_and_add_trace_id)
+register_middlewares(app)
 
 # -----------------------------
 # 注册异常处理器

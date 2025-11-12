@@ -5,6 +5,8 @@ import { Table, Button, Modal, Form, Input, InputNumber, Space, Popconfirm, mess
 import { PlusOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import { fetchCompanies, createCompany, deleteCompany } from "../../lib/api";
+import { createCompanyWithMsg, deleteCompanyWithMsg } from "../../lib/companyApi";
+import notify from "../../utils/notify";
 import ActionBar from "../../components/ActionBar";
 import type { Company } from "../../types/company";
 
@@ -20,7 +22,7 @@ export default function CompaniesPage() {
       const list = await fetchCompanies();
       setData(list);
     } catch (err: any) {
-      message.error(err.message || "加载公司列表失败");
+      notify.error(err, "加载公司列表失败");
     } finally {
       setLoading(false);
     }
@@ -31,25 +33,41 @@ export default function CompaniesPage() {
   }, []);
 
   const onCreate = async (values: any) => {
-    console.log(values);
+    console.log("onFinish called", values);
+    // also inspect current form state
     try {
-      await createCompany(values);
-      message.success("创建成功");
-      setCreateVisible(false);
-      form.resetFields();
-      load();
+      console.log("form.getFieldsValue() ->", form.getFieldsValue());
+    } catch (e) {
+      console.error("getFieldsValue error", e);
+    }
+    try {
+      const res = await createCompanyWithMsg(values);
+      if (res?.status === 200) {
+        notify.success(res.msg || "创建成功");
+        setCreateVisible(false);
+        form.resetFields();
+        load();
+      } else {
+        notify.error(res?.msg || "创建失败");
+      }
     } catch (err: any) {
-      message.error(err.message || "创建失败");
+      notify.error(err, "创建失败");
     }
   };
 
+  // Normal AntD onFinish handler will be used for submission
+
   const onDelete = async (id: number) => {
     try {
-      await deleteCompany(id);
-      message.success("删除成功");
-      load();
+      const res = await deleteCompanyWithMsg(id);
+      if (res?.status === 200) {
+        notify.success(res.msg || "删除成功");
+        load();
+      } else {
+        notify.error(res?.msg || "删除失败");
+      }
     } catch (err: any) {
-      message.error(err.message || "删除失败");
+      notify.error(err, "删除失败");
     }
   };
 
@@ -74,7 +92,7 @@ export default function CompaniesPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <section style={{ padding: 24 }}>
       <ActionBar>
         <Space>
           <Button onClick={() => load()}>刷新</Button>
@@ -84,12 +102,24 @@ export default function CompaniesPage() {
 
       <Table rowKey={(r: any) => r.id} columns={columns} dataSource={data} loading={loading} />
 
-      <Modal title="新建公司" open={createVisible} onCancel={() => setCreateVisible(false)} footer={null}>
-        <Form form={form} layout="vertical" onFinish={onCreate}>
-          <Form.Item name="name" label="公司名称"> <Input /> </Form.Item>
-          <Form.Item name="ticker" label="代码"> <Input /> </Form.Item>
-          <Form.Item name="main_business" label="主营业务"> <Input /> </Form.Item>
-          <Form.Item name="employee_count" label="员工数"> <InputNumber style={{ width: "100%" }} /> </Form.Item>
+      <Modal title="新建公司" open={createVisible} onCancel={() => setCreateVisible(false)} footer={null} destroyOnClose={false}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onCreate}
+        >
+          <Form.Item name="name" label="公司名称" rules={[{ required: true, message: "请输入公司名称" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="ticker" label="代码">
+            <Input />
+          </Form.Item>
+          <Form.Item name="main_business" label="主营业务">
+            <Input />
+          </Form.Item>
+          <Form.Item name="employee_count" label="员工数">
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
           <Form.Item>
             <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button onClick={() => setCreateVisible(false)}>取消</Button>
@@ -98,6 +128,6 @@ export default function CompaniesPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </section>
   );
 }

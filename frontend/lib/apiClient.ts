@@ -53,6 +53,20 @@ export class ApiClient {
     return parseApiResponse<T>(res);
   }
 
+  /**
+   * Fetch and return the raw ApiResponse object { status, msg, data }.
+   * Does not throw when api.status !== 200; returns the parsed body for callers to inspect msg.
+   */
+  async requestRaw<T = any>(path: string, init?: RequestInitEx): Promise<ApiResponse<T>> {
+    const res = await fetch(this.url(path), init);
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error(`Unexpected content-type: ${contentType}`);
+    }
+    const body: ApiResponse<T> = await res.json();
+    return body;
+  }
+
   resource(name: string) {
     const base = name.replace(/^\//, "");
     return {
