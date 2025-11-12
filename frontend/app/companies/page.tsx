@@ -92,7 +92,7 @@ export default function CompaniesPage() {
   ];
 
   return (
-    <section style={{ padding: 24 }}>
+  <main style={{ padding: 24 }}>
       <ActionBar>
         <Space>
           <Button onClick={() => load()}>刷新</Button>
@@ -128,6 +128,6 @@ export default function CompaniesPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </section>
+    </main>
   );
 }

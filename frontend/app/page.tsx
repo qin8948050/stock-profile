@@ -27,8 +27,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ padding: 24 }}>
-      <Row gutter={16} align="middle">
+    <main style={{ padding: 24 }}>
+      <section>
+        <Row gutter={16} align="middle">
         <Col span={16}>
           <Title level={2}>欢迎来到 Stock Profile</Title>
           <Paragraph style={{ fontSize: 16 }}>
@@ -53,19 +54,23 @@ export default function Home() {
             </div>
           </Card>
         </Col>
-      </Row>
+      </Row>  
+      </section>
 
-      <Row style={{ marginTop: 24 }}>
-        <Col span={24}>
-          <Card title="快速提示">
-            <ul>
-              <li>公司数据来自后端 API（路径：/api/companies）。</li>
-              <li>可通过右上角导航进入公司列表和详情。</li>
-              <li>如需增加行业画像字段，请在“新建/编辑”页面完善。</li>
-            </ul>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+
+      <section style={{ marginTop: 24 }}>
+        <Row>
+          <Col span={24}>
+            <Card title="快速提示">
+              <ul>
+                <li>公司数据来自后端 API（路径：/api/companies）。</li>
+                <li>可通过右上角导航进入公司列表和详情。</li>
+                <li>如需增加行业画像字段，请在“新建/编辑”页面完善。</li>
+              </ul>
+            </Card>
+          </Col>
+        </Row>
+      </section>
+    </main>
   );
 }

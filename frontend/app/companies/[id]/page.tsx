@@ -46,10 +46,10 @@ export default function CompanyDetailPage() {
     }
   };
 
-  if (!company) return <div style={{ padding: 24 }}>加载中...</div>;
+  if (!company) return <main style={{ padding: 24 }}>加载中...</main>;
 
   return (
-    <div style={{ padding: 24 }}>
+    <main style={{ padding: 24 }}>
       <Card title={company.name} loading={loading}>
         <Descriptions column={1} bordered>
           <Descriptions.Item label="ID">{company.id}</Descriptions.Item>
@@ -58,7 +58,7 @@ export default function CompanyDetailPage() {
           <Descriptions.Item label="员工数">{company.employee_count ?? '-'}</Descriptions.Item>
         </Descriptions>
 
-        <div style={{ marginTop: 16 }}>
+  <section style={{ marginTop: 16 }}>
           {!editing ? (
             <ActionBar>
               <Space>
@@ -88,8 +88,8 @@ export default function CompanyDetailPage() {
               </Form.Item>
             </Form>
           )}
-        </div>
+        </section>
       </Card>
-    </div>
+    </main>
   );
 }
