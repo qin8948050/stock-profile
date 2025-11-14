@@ -58,3 +58,6 @@ class CompanyRepository(BaseRepository[Company]):
 
     def get_by_code(self, db, code: str):
         return db.query(self.model).filter(self.model.ticker == code).first()
+
+    def count(self, db: Session) -> int:
+        return db.query(self.model).count()
