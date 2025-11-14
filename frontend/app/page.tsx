@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Card, Typography, Row, Col, Button, Space, Statistic, message } from "antd";
 import Link from "next/link";
 import { fetchCompanies } from "../lib/api";
+import { PaginatedCompanies } from "@/types/company";
+
 
 const { Title, Paragraph } = Typography;
 
@@ -11,11 +13,11 @@ export default function Home() {
   const [companyCount, setCompanyCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchCompanies(0, 1)
-      .then((list) => {
+    fetchCompanies(1, 1)
+      .then((data:PaginatedCompanies) => {
         // API returns array of companies; get total via length if limited
         // If backend supports a total field later, we can switch to that.
-        setCompanyCount(Array.isArray(list) ? list.length : 0);
+        setCompanyCount(data.total);
       })
       .catch((e) => {
         // message.warn is not in AntD message types in some versions; use notify.error for compatibility

@@ -19,7 +19,7 @@ export default function CompaniesPage() {
     setLoading(true);
     try {
       const list = await fetchCompanies();
-      setData(list);
+      setData(list.items);
     } catch (err: any) {
       notify.error(err, "加载公司列表失败");
     } finally {

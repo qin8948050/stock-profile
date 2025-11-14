@@ -1,3 +1,5 @@
+import { Page } from "./base";
+
 export type IndustryProfile = {
   id?: number;
   industry_category?: string | null;
@@ -20,3 +22,6 @@ export type Company = {
   supply_chain_control?: string | null;
   industry_profile?: IndustryProfile | null;
 };
+
+
+export type PaginatedCompanies = Page<Company>;

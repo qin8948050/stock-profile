@@ -83,12 +83,16 @@ export class ApiClient {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }),
-      update: <T = any>(id: number | string, payload: any) =>
-        this.request<T>(`${base}/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }),
+      update: <T = any>(id: number | string, payload: any) =>{
+        console.log("aaa",JSON.stringify(payload));
+        return this.request<T>(`${base}/${id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                })
+      }
+
+       ,
       delete: <T = any>(id: number | string) => this.request<T>(`${base}/${id}`, { method: "DELETE" }),
     };
   }
