@@ -1,64 +1,39 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Table, Button, Modal, Form, Input, InputNumber, Space, Popconfirm, message } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import Link from "next/link";
-import { fetchCompanies, createCompany, deleteCompany } from "../../lib/api";
+import { fetchCompanies, createCompany, deleteCompany } from "../../lib/companyApi";
 import notify from "../../utils/notify";
 import ActionBar from "../../components/ActionBar";
 import type { Company } from "../../types/company";
+import { usePagination } from "../../hooks/usePagination";
 
 export default function CompaniesPage() {
-  const [data, setData] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
   const [form] = Form.useForm();
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const list = await fetchCompanies();
-      setData(list.items);
-    } catch (err: any) {
-      notify.error(err, "加载公司列表失败");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
+  const { data, loading, pagination, load } = usePagination<Company>(fetchCompanies);
+  console.log(pagination)
   const onCreate = async (values: any) => {
     console.log("onFinish called", values);
-    // also inspect current form state
     try {
-      console.log("form.getFieldsValue() ->", form.getFieldsValue());
-    } catch (e) {
-      console.error("getFieldsValue error", e);
-    }
-    try {
-      const created = await createCompany(values);
-      // created is the created Company (resource); ApiClient throws on non-200
+      await createCompany(values);
       notify.success("创建成功");
       setCreateVisible(false);
       form.resetFields();
-      load();
+      load(pagination);
     } catch (err: any) {
       // ApiClient throws an Error containing backend msg when status !== 200
       notify.error(err, "创建失败");
     }
   };
 
-  // Normal AntD onFinish handler will be used for submission
-
   const onDelete = async (id: number) => {
     try {
       await deleteCompany(id);
       notify.success("删除成功");
-      load();
+      load(pagination);
     } catch (err: any) {
       notify.error(err, "删除失败");
     }
@@ -88,12 +63,12 @@ export default function CompaniesPage() {
   <main style={{ padding: 24 }}>
       <ActionBar>
         <Space>
-          <Button onClick={() => load()}>刷新</Button>
+          <Button onClick={() => load(pagination)}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateVisible(true)}>新建公司</Button>
         </Space>
       </ActionBar>
 
-      <Table rowKey={(r: any) => r.id} columns={columns} dataSource={data} loading={loading} />
+      <Table rowKey={(r: any) => r.id} columns={columns} dataSource={data} loading={loading} pagination={pagination} onChange={load} />
 
       <Modal title="新建公司" open={createVisible} onCancel={() => setCreateVisible(false)} footer={null} destroyOnClose={false}>
         <Form

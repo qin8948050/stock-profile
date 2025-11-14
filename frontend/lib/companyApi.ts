@@ -2,12 +2,14 @@
 
 import client from "./apiClient";
 import type { Company,PaginatedCompanies } from "../types/company";
-
+import {Fetcher} from "../hooks/usePagination";
 
 export const companies = client.resource("companies");
 
-export const fetchCompanies = (skip = 1, limit = 100): Promise<PaginatedCompanies> =>
-	companies.list<PaginatedCompanies>({ skip, limit });
+export const fetchCompanies: Fetcher<Company> = async ({ page=1, size=10 }) => {
+  const response = await companies.list<PaginatedCompanies>({ page, size });
+  return { items: response.items, total: response.total };
+}
 
 export const fetchCompany = (id: number): Promise<Company> => companies.get<Company>(id);
 
