@@ -13,8 +13,11 @@ export default function Home() {
   const [companyCount, setCompanyCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchCompanies(1, 1)
-      .then((data:PaginatedCompanies) => {
+    fetchCompanies({
+      page: 1,
+      size: 1,
+    })
+      .then((data) => {
         // API returns array of companies; get total via length if limited
         // If backend supports a total field later, we can switch to that.
         setCompanyCount(data.total);
