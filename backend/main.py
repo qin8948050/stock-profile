@@ -1,14 +1,15 @@
 from pathlib import Path
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import uvicorn
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from routers import company
+from routers import company, financial_statement
 from core.log import init_log
 from core.config import config
-from core.exceptions import http_exception_handler, generic_exception_handler
+from core.exceptions import http_exception_handler, generic_exception_handler, validation_exception_handler
 from core.middleware import register_middlewares
 from core.lifespan import lifespan
 
@@ -32,12 +33,15 @@ register_middlewares(app)
 # 注册异常处理器
 # -----------------------------
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
+
 
 # -----------------------------
 # 注册路由
 # -----------------------------
 app.include_router(company.router,prefix=config.api.prefix)
+app.include_router(financial_statement.router,prefix=config.api.prefix)
 
 # -----------------------------
 # 启动入口（支持直接运行）

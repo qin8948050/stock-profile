@@ -74,6 +74,9 @@ class Company(Base, TimestampMixin):
     industry_profile = relationship("IndustryProfile", back_populates="company", uselist=False, cascade="all, delete-orphan")
     # competitiveness_profile = relationship("CompetitivenessProfile", back_populates="company", uselist=False, cascade="all, delete-orphan")
 
+    # 一对多关联: 一个公司可以有多张资产负债表
+    balance_sheets = relationship("BalanceSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
+
 
     def __repr__(self):
         return f"<Company(name={self.name}, employee_count={self.employee_count})>"

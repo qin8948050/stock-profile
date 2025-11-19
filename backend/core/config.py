@@ -31,6 +31,9 @@ class OpenTelemetryConfig(BaseModel):
     deployment_environment: str
     otlp_endpoint: str
 
+class FinancialModelingPrepConfig(BaseModel):
+    apikey:str
+
 class AppConfig(BaseModel):
     app: AppInfo
     server: ServerConfig
@@ -38,6 +41,7 @@ class AppConfig(BaseModel):
     logging: LoggingConfig
     database: DatabaseConfig
     opentelemetry: OpenTelemetryConfig
+    financial_modeling_prep:FinancialModelingPrepConfig
 
 def merge_configs(base, override):
     for key, value in override.items():
