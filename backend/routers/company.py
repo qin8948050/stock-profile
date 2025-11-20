@@ -3,14 +3,13 @@ from sqlalchemy.orm import Session
 from typing import List
 from schemas import CompanyCreate, CompanyUpdate, CompanyInDB
 from schemas.pagination import Page
-from repositories.company_repo import CompanyRepository
+from repositories import CompanyRepository, get_company_repo
 from core.database import get_db
+from core.pagination import paginate
 from schemas.response import ApiResponse
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
-def get_company_repo() -> CompanyRepository:
-    return CompanyRepository()
 
 @router.post("/", response_model=ApiResponse[CompanyInDB])
 def create_company(company_in: CompanyCreate, db: Session = Depends(get_db), repo: CompanyRepository = Depends(get_company_repo)):
@@ -26,16 +25,12 @@ def get_company(company_id: int, db: Session = Depends(get_db), repo: CompanyRep
 
 @router.get("/", response_model=ApiResponse[Page[CompanyInDB]])
 def list_companies(skip: int = 1, limit: int = 100, db: Session = Depends(get_db), repo: CompanyRepository = Depends(get_company_repo)):
-    companies = repo.list(db, skip=skip, limit=limit)
-    total = repo.count(db)
-    page = (skip // limit) + 1
-    total_pages = (total + limit - 1) // limit
-
-    paginated_data = Page[CompanyInDB](
-        items=companies,
-        page=page,
-        total_pages=total_pages,
-        total=total
+    paginated_data = paginate(
+        db=db,
+        repo=repo,
+        response_schema=CompanyInDB,
+        skip=skip,
+        limit=limit
     )
     return ApiResponse.success(data=paginated_data)
 

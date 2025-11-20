@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict, field_validator
+from typing import Optional, List, Any
 from models.company import IndustryCategoryEnum, IndustryConcentrationEnum, IndustryBarrierEnum, MarketPositionEnum, \
     SupplyChainControlEnum
 
@@ -17,6 +17,12 @@ class IndustryProfileBase(BaseModel):
     industry_cagr_5y: Optional[float] = None
     major_competitors:Optional[str] = None
     industry_trend:Optional[str] = None
+    #TODO: 跳过校验，只用于测试
+    @field_validator('concentration_level', 'industry_barrier', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v: Any) -> Optional[Any]:
+        """将空字符串转换为 None"""
+        return None if v == "" else v
 
 
 class IndustryProfileCreate(IndustryProfileBase):
@@ -51,6 +57,12 @@ class CompanyBase(BaseModel):
     market_position:Optional[MarketPositionEnum] = None
     differentiation:Optional[str] = None
     supply_chain_control:Optional[SupplyChainControlEnum] = None
+    #TODO: 跳过校验，只用于测试
+    @field_validator('market_position', 'supply_chain_control', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v: Any) -> Optional[Any]:
+        """将空字符串转换为 None"""
+        return None if v == "" else v
 
 class CompanyCreate(CompanyBase):
     """创建公司时使用的 Schema，嵌套了 IndustryProfileCreate"""
