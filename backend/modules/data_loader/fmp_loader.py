@@ -10,7 +10,8 @@ class FMPBaseLoader:
     Base loader for Financial Modeling Prep API.
     Manages API connection and data fetching logic.
     """
-    BASE_URL = "https://financialmodelingprep.com/api/v3" # 使用 v3 API 更常见
+    # BASE_URL = "https://financialmodelingprep.com/api/v3" # 使用 v3 API 更常见
+    BASE_URL = "https://financialmodelingprep.com/stable" # 使用 v3 API 更常见
 
     def __init__(self, apikey: str):
         if not apikey:

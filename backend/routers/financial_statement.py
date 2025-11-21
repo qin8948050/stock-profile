@@ -1,26 +1,91 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from repositories.financial_repo import BalanceStatementRepository
-from schemas.financial import FinancialSheetUpsert, FinancialStatementType
+from repositories import CompanyRepository, get_company_repo
+from repositories.financial_repo import get_statement_dependencies
+from schemas.financial import FinancialSheetUpsert, StatementUploadForm
 from schemas.response import ApiResponse
 
 router = APIRouter(prefix="/financial-statements", tags=["Financial Statements"])
 
 
 
-def get_financial_repo(statement_type: FinancialStatementType):
-    repo_map = {
-        FinancialStatementType.BALANCE: BalanceStatementRepository(),
-    }
-    repo = repo_map.get(statement_type)
-    if repo is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid financial statement type: {statement_type}")
-    return repo
+
+@router.post("/upload", response_model=ApiResponse)
+async def upload_and_upsert_financial_statement(
+    db: Session = Depends(get_db),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+    form_data: StatementUploadForm = Depends(),
+    file: UploadFile = File(..., description="JSON文件"),
+):
+    """
+    通过上传JSON文件来更新或插入（upsert）财务报表数据。
+    """
+    # 1. 校验公司是否存在
+    company = company_repo.get(db, id=form_data.company_id)
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Company with id {form_data.company_id} not found."
+        )
+
+    # 2. 校验文件类型
+    if not file.filename.endswith('.json'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Please upload a .json file."
+        )
+
+    # 3. 获取报表类型对应的 repo
+    try:
+        _, repo = get_statement_dependencies(form_data.type)
+    except HTTPException as e:
+        raise e
+
+    # 4. 读取并解析JSON文件
+    contents = await file.read()
+    try:
+        data = json.loads(contents)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON format in the uploaded file.")
+
+    # 5. 执行 upsert 操作
+    new_financial_data = repo.upsert_from_json(db=db, company_id=form_data.company_id, data=data)
+    return ApiResponse.success(data=new_financial_data)
 
 @router.post("/", response_model=ApiResponse)
-def upsert_financial_statement(financial_statement_in: FinancialSheetUpsert, db: Session = Depends(get_db)):
-    repo = get_financial_repo(financial_statement_in.type)
-    new_financial_data = repo.create(db=db, obj_in=financial_statement_in)
+def upsert_financial_statement(
+    financial_statement_in: FinancialSheetUpsert,
+    db: Session = Depends(get_db),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    """
+    Fetches financial data from an external API and upserts it into the database.
+    """
+    company = company_repo.get(db, id=financial_statement_in.company_id)
+    if not company or not company.ticker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Company with id {financial_statement_in.company_id} not found or has no ticker symbol."
+        )
+
+    # 2. 获取报表类型对应的 loader 和 repo
+    try:
+        loader, repo = get_statement_dependencies(financial_statement_in.type)
+    except HTTPException as e:
+        raise e
+
+
+    data = loader.load(company.ticker)
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not fetch financial data for symbol '{company.ticker}'. "
+                   f"The symbol might be invalid or the API is unavailable."
+        )
+
+    # 4. 执行 upsert 操作
+    new_financial_data = repo.upsert_from_json(db=db, company_id=financial_statement_in.company_id, data=data)
     return ApiResponse.success(data=new_financial_data)

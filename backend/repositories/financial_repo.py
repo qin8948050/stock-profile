@@ -1,17 +1,49 @@
-from typing import Dict
-
+from typing import Dict, List, Union, Any
+from pydantic import BaseModel
+from fastapi import HTTPException, status
 from pandas.core.interchange.dataframe_protocol import Column
 
 from repositories import BaseRepository
 from sqlalchemy.orm import Session
 from models.financial import BalanceSheetStatementCore,BalanceSheetStatementEAV
 from repositories.base import BaseRepository
+from schemas.financial import FinancialStatementType
+from modules.data_loader.base import DataLoader
+from modules.data_loader.fmp_loader import FMPBalanceSheetLoader
+from core.config import config
+
+
+def get_statement_dependencies(statement_type: FinancialStatementType) -> tuple[DataLoader, BaseRepository]:
+    """
+    通用工厂函数，根据报表类型返回对应的 Loader 和 Repository。
+    """
+    # 映射表，用于配置不同报表类型对应的依赖
+    dependency_map = {
+        FinancialStatementType.BALANCE: (FMPBalanceSheetLoader(config=config), BalanceStatementRepository()),
+        # 以后可以轻松扩展，例如:
+        # FinancialStatementType.INCOME: (FMPIncomeStatementLoader(config=config), IncomeStatementRepository()),
+    }
+
+    dependencies = dependency_map.get(statement_type)
+    if dependencies is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported financial statement type: {statement_type}")
+
+    return dependencies
 
 class BalanceStatementRepository(BaseRepository[BalanceSheetStatementCore]):
     def __init__(self):
-        super().__init__(BalanceSheetStatementCore)
+        super().__init__(
+            BalanceSheetStatementCore,
+            eav_model=BalanceSheetStatementEAV,
+            eav_fk_name="statement_id"
+        )
 
-    def upsert_from_json(self, db: Session, company_id: int, data: Dict) -> BalanceSheetStatementCore:
+    def _upsert_single(self, db: Session, *, data: Dict[str, Any], **kwargs) -> BalanceSheetStatementCore:
+        """
+        Upserts a single balance sheet record from a dictionary without committing.
+        The company_id is expected to be passed via kwargs.
+        """
+        company_id = kwargs.get("company_id")
         # 核心字段
         core_fields = {
             "company_id": company_id,
@@ -62,20 +94,14 @@ class BalanceStatementRepository(BaseRepository[BalanceSheetStatementCore]):
             db.query(BalanceSheetStatementEAV).filter_by(balance_sheet_id=core_obj.id).delete()
         else:
             # 创建新记录
-            core_obj = self.create(db, obj_in=core_fields)
+            core_obj = self.model(**core_fields)
+            db.add(core_obj)
             # 立即刷新以获取 core_obj.id
             db.flush()
 
         # 2️⃣ 保存 EAV 可变字段
+        # 这里的 excluded_keys 仍然是特定于此仓库的，因为它知道哪些原始键被映射到了核心字段
         excluded_keys = set(core_fields.keys()) | {"date", "fiscalYear", "period"}
-        for key, value in data.items():
-            if key not in excluded_keys:
-                eav_obj = BalanceSheetStatementEAV(
-                    balance_sheet_id=core_obj.id,
-                    metric_name=key,
-                    metric_value=str(value) if value is not None else None
-                )
-                db.add(eav_obj)
-        db.commit()
-        db.refresh(core_obj)
+        self._save_eav_attributes(db, core_obj=core_obj, data=data, excluded_keys=excluded_keys)
+
         return core_obj

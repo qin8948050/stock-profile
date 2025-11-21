@@ -25,7 +25,6 @@ class BalanceSheetStatementCore(Base, FinancialBaseMixin,TimestampMixin):
     cash_and_short_term_investments = Column(BigInteger, nullable=True, comment="Cash and short-term investments")
 
     net_receivables = Column(BigInteger, nullable=True, comment="Net receivables")
-    inventory = Column(BigInteger, nullable=True, comment="Inventory")
     other_current_assets = Column(BigInteger, nullable=True, comment="Other current assets")
     total_current_assets = Column(BigInteger, nullable=True, comment="Total current assets")
 
@@ -60,6 +59,7 @@ class BalanceSheetStatementCore(Base, FinancialBaseMixin,TimestampMixin):
     total_liabilities_and_total_equity = Column(BigInteger, nullable=True, comment="Liabilities and equity total")
 
     # 关系：关联回 Company
+    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
     company = relationship('Company', back_populates='balance_sheets')
     # 关系：一对多关联到 EAV 属性
     eav_attributes = relationship('BalanceSheetStatementEAV', back_populates='statement', cascade="all, delete-orphan")
