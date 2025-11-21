@@ -12,7 +12,7 @@ class FinancialBaseMixin:
     date = Column(Date, nullable=False, comment="Statement date")
     filing_date = Column(Date, nullable=True, comment="Filing date")
 
-    fiscal_year = Column(Integer, nullable=False, comment="Fiscal year")
+    fiscal_year = Column(String(10), nullable=False, comment="Fiscal year")
     period = Column(String(10), nullable=False, comment="Reporting period (FY/Q1/Q2/Q3)")
 
 class BalanceSheetStatementCore(Base, FinancialBaseMixin,TimestampMixin):
@@ -69,7 +69,7 @@ class BalanceSheetStatementEAV(Base, TimestampMixin):
     __tablename__ = 'balance_sheet_statement_eav'
 
     id = Column(Integer, primary_key=True, autoincrement=True, comment="主键ID")
-    statement_id = Column(Integer, ForeignKey('balance_sheet_statement_core.id'), nullable=False, index=True, comment="报表ID")
+    balance_statement_id = Column(Integer, ForeignKey('balance_sheet_statement_core.id'), nullable=False, index=True, comment="报表ID")
     attribute_name = Column(String(100), nullable=False, comment="属性名, e.g., '存货', '商誉'")
 
     # 稀疏列：根据值的类型，只填充其中一列
