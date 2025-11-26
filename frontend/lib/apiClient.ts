@@ -50,6 +50,7 @@ export class ApiClient {
     if (init?.skipJsonParse) {
       return (undefined as unknown) as T;
     }
+
     return parseApiResponse<T>(res);
   }
 
@@ -77,14 +78,15 @@ export class ApiClient {
         return this.request<T>(`${base}${qs}`);
       },
       get: <T = any>(id: number | string) => this.request<T>(`${base}/${id}`),
-      create: <T = any>(payload: any) =>
-        this.request<T>(`${base}/`, {
+      create: <T = any>(payload: any) => {
+        const isFormData = payload instanceof FormData;
+        return this.request<T>(`${base}/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }),
+          headers: isFormData ? {} : { "Content-Type": "application/json" },
+          body: isFormData ? payload : JSON.stringify(payload),
+        });
+      },
       update: <T = any>(id: number | string, payload: any) =>{
-        console.log("aaa",JSON.stringify(payload));
         return this.request<T>(`${base}/${id}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
