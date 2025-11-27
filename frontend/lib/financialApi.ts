@@ -1,19 +1,17 @@
-import client from "@/lib/apiClient";
-import { ApiResponse } from "@/types/api";
+import defaultClient from "@/lib/apiClient";
 
 type StatementUploader = {
-    company:number;
+    company_id:number;
     type: string;
     file: File;
 }
 
-export const uploader = client.resource("financial-statements/upload");
 
 export const uploadFinancialStatement = async (
-    payload: Partial<StatementUploader>
+    payload: StatementUploader
 ) => {
-    const { company, type, file } = payload;
-    if (!file || !type || !company) {
+    const { company_id, type, file } = payload;
+    if (!file || !type || !company_id) {
         throw new Error("公司ID、报表类型和文件均为必填项。");
     }
 
@@ -21,13 +19,12 @@ export const uploadFinancialStatement = async (
     const formData = new FormData();
     formData.append("file", file);
     formData.append("type", type);
-    formData.append("company_id", String(company));
-
+    formData.append("company_id", String(company_id));
+    console.log(formData);
     try {
-        // 将 FormData 对象传递给 create 方法
-        // axios (或类似的 http 客户端) 会自动设置正确的 Content-Type
-        const response= await uploader.create(formData);
-        return response;
+        return defaultClient.request<null>("financial-statements/upload",{
+            method: "POST",
+            body: formData});
     } catch (error: any) {
         console.error("Failed to upload financial statement:", error);
         throw error;

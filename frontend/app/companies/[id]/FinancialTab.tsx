@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Select, Upload, Button, Form, Space } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { Card, Select, Upload, Button, Form, Modal } from "antd";
+import {AntDesignOutlined, UploadOutlined} from "@ant-design/icons";
 import notify from "../../../utils/notify";
 import { uploadFinancialStatement } from "../../../lib/financialApi";
-import {deleteCompany} from "@/lib/companyApi";
+import GradientButton from "@/components/Buttons";
 
 interface FinancialTabProps {
   companyId: number;
@@ -21,6 +21,7 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
   const [form] = Form.useForm();
   const [uploading, setUploading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleUpload = async (values: { statementType: string }) => {
     if (fileList.length === 0) {
@@ -33,18 +34,21 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
 
     setUploading(true);
 
-      try {
-          await uploadFinancialStatement({
-              company: companyId,
-              type: statementType,
-              file: file,
-          });
-          notify.success("上传成功");
-      } catch (err: any) {
-          notify.error(err, "上传失败");
-      } finally {
-          setUploading(false);
-      }
+    try {
+      await uploadFinancialStatement({
+        company_id: companyId,
+        type: statementType,
+        file: file,
+      });
+      notify.success("上传成功");
+      setIsModalVisible(false);
+      form.resetFields();
+      setFileList([]);
+    } catch (err: any) {
+      notify.error(err, "上传失败");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const props = {
@@ -64,39 +68,52 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
   };
 
   return (
-    <Card>
-      <Form form={form} onFinish={handleUpload} layout="vertical">
-        <Form.Item
-          name="statementType"
-          label="财务报表类型"
-          rules={[{ required: true, message: "请选择报表类型！" }]}
-        >
-          <Select
-            placeholder="请选择要上传的财务报表类型"
-            options={STATEMENT_TYPE_OPTIONS}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="上传数据文件"
-          rules={[{ required: true, message: "请选择一个文件！" }]}
-        >
-          <Upload {...props}>
-            <Button icon={<UploadOutlined />}>选择 JSON 文件</Button>
-          </Upload>
-        </Form.Item>
-
-        <Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={uploading}
-            disabled={fileList.length === 0}
+    <>
+      <Card
+        title="财务报表分析"
+        extra={
+          <GradientButton size="middle" type="primary" icon={<AntDesignOutlined />} onClick={() => setIsModalVisible(true)}>上传财报</GradientButton>
+        }
+      >
+        <p>这里将展示财务图表。</p>
+      </Card>
+      <Modal
+        title="上传财务报表"
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form form={form} onFinish={handleUpload} layout="vertical" style={{ marginTop: 24 }}>
+          <Form.Item
+            name="statementType"
+            label="财务报表类型"
+            rules={[{ required: true, message: "请选择报表类型！" }]}
           >
-            {uploading ? "正在上传..." : "开始上传"}
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
+            <Select
+              placeholder="请选择要上传的财务报表类型"
+              options={STATEMENT_TYPE_OPTIONS}
+            />
+          </Form.Item>
+
+          <Form.Item label="上传数据文件" required>
+            <Upload {...props}>
+              <Button icon={<UploadOutlined />}>选择 JSON 文件</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={uploading}
+              disabled={fileList.length === 0}
+            >
+              {uploading ? "正在上传..." : "开始上传"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
   );
 }

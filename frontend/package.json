@@ -13,6 +13,7 @@
     "@rc-component/input": "^1.1.2",
     "@rc-component/util": "^1.4.0",
     "antd": "^6.0.0-alpha.4",
+    "antd-style": "^3.7.1",
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0"
