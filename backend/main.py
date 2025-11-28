@@ -1,51 +1,18 @@
 from pathlib import Path
-from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
-import os
 import uvicorn
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from routers import company, financial_statement
-from core.log import init_log
+from core.app_factory import create_app
 from core.config import config
-from core.exceptions import http_exception_handler, generic_exception_handler, validation_exception_handler
-from core.middleware import register_middlewares
-from core.lifespan import lifespan
-
-init_log(log_level=config.logging.level,log_file=Path(config.logging.file))
-
-# -----------------------------
-# 创建 FastAPI 应用
-# -----------------------------
-app = FastAPI(
-    title=config.app.name,
-    version=config.app.version,
-    lifespan=lifespan
-)
-
-# -----------------------------
-# 注册中间件（在 core.middleware 中集中注册）
-# -----------------------------
-register_middlewares(app)
-
-# -----------------------------
-# 注册异常处理器
-# -----------------------------
-app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(Exception, generic_exception_handler)
+from core.log import init_log
 
 
-# -----------------------------
-# 注册路由
-# -----------------------------
-app.include_router(company.router,prefix=config.api.prefix)
-app.include_router(financial_statement.router,prefix=config.api.prefix)
+# 初始化应用日志系统
+init_log(log_level=config.logging.level, log_file=Path(config.logging.file))
 
-# -----------------------------
+# 使用工厂函数创建应用实例
+app = create_app()
+
 # 启动入口（支持直接运行）
-# -----------------------------
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

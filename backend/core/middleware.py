@@ -4,6 +4,8 @@ from typing import Iterable, Optional
 from fastapi import Request, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.trace import get_current_span
+from sqlalchemy.ext.asyncio import AsyncEngine
+from core.telemetry import setup_tracer
 from core.log import logger
 
 
@@ -37,21 +39,18 @@ def _parse_allowed_origins(env_value: Optional[str]) -> Iterable[str]:
     return [o.strip() for o in env_value.split(",") if o.strip()]
 
 
-def register_middlewares(app: FastAPI) -> None:
+def register_middlewares(app: FastAPI, engine: AsyncEngine) -> None:
     """Register application middlewares.
 
     This centralizes middleware registration (logging, CORS) so `main.py` stays small.
     Configure CORS via the `CORS_ALLOWED_ORIGINS` environment variable (comma-separated
     list) or leave unset to use sensible defaults for development.
     """
-    # register request logging middleware
-    app.middleware("http")(log_requests_and_add_trace_id)
+    # 关键：首先初始化追踪，它会自动注入自己的中间件
+    setup_tracer(app=app, engine=engine)
 
-    # Configure CORS
-    # allowed_origins_env = os.getenv("CORS_ALLOWED_ORIGINS")
-    # allowed_origins = list(_parse_allowed_origins(allowed_origins_env))
-    # if not allowed_origins:
-    #     allowed_origins = ['*']
+    # 然后，注册你自己的日志中间件，它现在可以访问由 OpenTelemetry 创建的 span
+    app.middleware("http")(log_requests_and_add_trace_id)
 
     app.add_middleware(
         CORSMiddleware,
