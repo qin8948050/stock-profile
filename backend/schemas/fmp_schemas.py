@@ -47,3 +47,53 @@ class FMPBalanceSheetSchema(BaseModel):
         from_attributes=True,
         extra='allow'             # 允许 JSON 中有多余的字段
     )
+
+class FMPIncomeStatementSchema(BaseModel):
+    """
+    Represents the structure of an income statement item from the FMP API.
+    It automatically converts camelCase from the API to snake_case in Python.
+    """
+    date: str
+    symbol: str
+    cik: Optional[str] = None
+    filing_date: Optional[str] = Field(alias="filingDate")
+    fiscal_year: str = Field(alias="fiscalYear")
+    period: str
+    revenue: Optional[int] = None
+    cost_of_revenue: Optional[int] = None
+    gross_profit: Optional[int] = None
+    research_and_development_expenses: Optional[int] = None
+    general_and_administrative_expenses: Optional[int] = None
+    selling_and_marketing_expenses: Optional[int] = None
+    selling_general_and_administrative_expenses: Optional[int] = None
+    other_expenses: Optional[int] = None
+    operating_expenses: Optional[int] = None
+    cost_and_expenses: Optional[int] = None
+    net_interest_income: Optional[int] = None
+    interest_income: Optional[int] = None
+    interest_expense: Optional[int] = None
+    depreciation_and_amortization: Optional[int] = None
+    ebitda: Optional[int] = None
+    ebit: Optional[int] = None
+    non_operating_income_excluding_interest: Optional[int] = None
+    operating_income: Optional[int] = None
+    total_other_income_expenses_net: Optional[int] = None
+    income_before_tax: Optional[int] = None
+    income_tax_expense: Optional[int] = None
+    net_income_from_continuing_operations: Optional[int] = None
+    net_income_from_discontinued_operations: Optional[int] = None
+    other_adjustments_to_net_income: Optional[int] = None
+    net_income: Optional[int] = None
+    net_income_deductions: Optional[int] = None
+    bottom_line_net_income: Optional[int] = None
+    eps: Optional[float] = None
+    eps_diluted: Optional[float] = None
+    weighted_average_shs_out: Optional[int] = None
+    weighted_average_shs_out_dil: Optional[int] = None
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+        extra='allow'
+    )

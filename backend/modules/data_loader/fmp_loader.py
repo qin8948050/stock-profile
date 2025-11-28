@@ -53,3 +53,11 @@ class FMPBalanceSheetLoader(DataLoader):
 
     def load(self, company_code: str):
         return self.fmp_loader.fetch_json("balance-sheet-statement", company_code)
+
+class FMPIncomeSheetLoader(DataLoader):
+    """Loads income statement data using FMPBaseLoader."""
+    def __init__(self, config: AppConfig):
+        self.fmp_loader = FMPBaseLoader(apikey=config.financial_modeling_prep.apikey)
+
+    def load(self, company_code: str):
+        return self.fmp_loader.fetch_json("income-sheet-statement", company_code)

@@ -76,6 +76,7 @@ class Company(Base, TimestampMixin):
 
     # 一对多关联: 一个公司可以有多张资产负债表
     balance_sheets = relationship("BalanceSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
+    income_sheets = relationship("IncomeSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
 
 
     def __repr__(self):

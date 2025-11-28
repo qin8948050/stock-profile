@@ -2,18 +2,8 @@ from sqlalchemy import Column, String, Integer, Date, BigInteger, ForeignKey, Te
 from sqlalchemy.orm import relationship
 
 from models import Base, TimestampMixin
+from models.base import FinancialBaseMixin
 
-class FinancialBaseMixin:
-
-    # ---------- Meta Info ----------
-    symbol = Column(String(20), index=True, nullable=False, comment="Ticker symbol")
-    cik = Column(String(20), nullable=True, comment="CIK number")
-
-    date = Column(Date, nullable=False, comment="Statement date")
-    filing_date = Column(Date, nullable=True, comment="Filing date")
-
-    fiscal_year = Column(String(10), nullable=False, comment="Fiscal year")
-    period = Column(String(10), nullable=False, comment="Reporting period (FY/Q1/Q2/Q3)")
 
 class BalanceSheetStatementCore(Base, FinancialBaseMixin,TimestampMixin):
     __tablename__ = 'balance_sheet_statement_core'

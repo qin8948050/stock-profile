@@ -12,8 +12,8 @@ build:
 
 # 构建指定服务的镜像 (例如: make build-image service=backend)
 build-image:
-	@echo "Building Docker image for service: $(service)..."
-	@docker-compose build $(service)
+	@echo "Building Docker image for service: $(service) with tag: ${TAG}..."
+	@docker-compose build --build-arg TAG=${TAG} $(service)
 
 # 在后台启动所有服务
 up:
@@ -41,8 +41,8 @@ shell:
 help:
 	@echo "Usage: make [target]"
 	@echo "Targets:"
-	@echo "  build      Build all service images"
-	@echo "  build-image  Build a specific service image (e.g., 'make build-image service=backend')"
+	@echo "  build        Build all service images"
+	@echo "  build-image  Build a specific service image (e.g., 'make build-image service=backend TAG=v1.0')"
 	@echo "  up         Start all services"
 	@echo "  down       Stop and remove all services"
 	@echo "  restart    Restart all services"

@@ -6,12 +6,13 @@ from pydantic.alias_generators import to_camel
 
 from repositories import BaseRepository
 from sqlalchemy.orm import Session
-from models.financial import BalanceSheetStatementCore,BalanceSheetStatementEAV
+from models import BalanceSheetStatementCore,BalanceSheetStatementEAV
+from models import IncomeSheetStatementCore, IncomeSheetStatementEAV
 from repositories.base import BaseRepository
 from schemas.financial import FinancialStatementType
-from schemas.fmp_schemas import FMPBalanceSheetSchema
+from schemas.fmp_schemas import FMPBalanceSheetSchema, FMPIncomeStatementSchema
 from modules.data_loader.base import DataLoader
-from modules.data_loader.fmp_loader import FMPBalanceSheetLoader
+from modules.data_loader.fmp_loader import FMPBalanceSheetLoader, FMPIncomeSheetLoader
 from core.config import config
 from utils.case_converter import convert_keys_to_snake_case
 
@@ -23,8 +24,7 @@ def get_statement_dependencies(statement_type: FinancialStatementType) -> tuple[
     # 映射表，用于配置不同报表类型对应的依赖
     dependency_map = {
         FinancialStatementType.BALANCE: (FMPBalanceSheetLoader(config=config), BalanceStatementRepository()),
-        # 以后可以轻松扩展，例如:
-        # FinancialStatementType.INCOME: (FMPIncomeStatementLoader(config=config), IncomeStatementRepository()),
+        FinancialStatementType.INCOME: (FMPIncomeSheetLoader(config=config), IncomeStatementRepository()),
     }
 
     dependencies = dependency_map.get(statement_type)
@@ -89,6 +89,56 @@ class BalanceStatementRepository(BaseRepository[BalanceSheetStatementCore]):
 
         # 3️⃣ 保存 EAV 可变字段
         # 从已验证的数据中排除核心字段，剩下的就是 EAV 字段
+        eav_data = parsed_data.model_dump(exclude=core_field_names, exclude_unset=True)
+        if eav_data:
+            self._save_eav_attributes(db, core_obj=core_obj, data=eav_data, excluded_keys=set())
+
+        return core_obj
+
+class IncomeStatementRepository(BaseRepository[IncomeSheetStatementCore]):
+    def __init__(self):
+        super().__init__(
+            IncomeSheetStatementCore,
+            eav_model=IncomeSheetStatementEAV,
+            eav_fk_name="income_statement_id"
+        )
+
+    def _upsert_single(self, db: Session, *, data: Dict[str, Any], **kwargs) -> IncomeSheetStatementCore:
+        """
+        Upserts a single income statement record from a dictionary without committing.
+        The company_id is expected to be passed via kwargs.
+        """
+        company_id = kwargs.get("company_id")
+
+        snake_case_data = convert_keys_to_snake_case(data)
+        parsed_data = FMPIncomeStatementSchema.model_validate(snake_case_data)
+
+        core_field_names = set(FMPIncomeStatementSchema.model_fields.keys())
+        core_data_dict = parsed_data.model_dump(include=core_field_names, exclude_unset=True)
+
+        core_fields = {"company_id": company_id, **core_data_dict}
+
+        symbol = core_fields.get("symbol")
+        fiscal_year = core_fields.get("fiscal_year")
+        period = core_fields.get("period")
+
+        if not all([symbol, fiscal_year, period]):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Incomplete data: 'symbol', 'fiscal_year', and 'period' are required for upsert."
+            )
+
+        core_obj = db.query(self.model).filter_by(symbol=symbol, fiscal_year=fiscal_year, period=period).first()
+
+        if core_obj:
+            for key, value in core_fields.items():
+                setattr(core_obj, key, value)
+            db.query(IncomeSheetStatementEAV).filter_by(income_statement_id=core_obj.id).delete()
+        else:
+            core_obj = self.model(**core_fields)
+            db.add(core_obj)
+            db.flush()
+
         eav_data = parsed_data.model_dump(exclude=core_field_names, exclude_unset=True)
         if eav_data:
             self._save_eav_attributes(db, core_obj=core_obj, data=eav_data, excluded_keys=set())
