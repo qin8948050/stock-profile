@@ -2,24 +2,24 @@ version: '3.8'
 
 services:
   backend:
+    image: ${IMAGE_PREFIX}stock-profile-backend:${TAG:-latest}
     build:
-      context: ./backend  # 1. 设置构建上下文为 backend 目录
-      dockerfile: Dockerfile # 2. Dockerfile 在该上下文中
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: stock-profile-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app  # 将本地后端代码挂载到容器，实现热重载
+      - ./backend:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    # 注意：因为工作目录是 /app，所以可以直接运行 main:app
 
   frontend:
+    image: ${IMAGE_PREFIX}stock-profile-frontend:${TAG:-latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: stock-profile-frontend
     ports:
-      - "3000:80" # 将主机的 3000 端口映射到容器的 80 端口
+      - "3000:80"
     volumes:
-      # 挂载源码目录，如果使用Create React App等工具，可能需要额外配置才能热更新
-      - ./frontend/src:/app/src 
+      - ./frontend/src:/app/src

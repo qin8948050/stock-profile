@@ -5,25 +5,28 @@
 # 镜像 tag，默认为 latest
 TAG ?= latest
 
+
+IMAGE_PREFIX ?= m.daocloud.io/
+
 # 构建所有服务的镜像
 build:
 	@echo "Building Docker images for all services..."
-	@docker-compose build --build-arg TAG=${TAG}
+	@IMAGE_PREFIX=${IMAGE_PREFIX} docker-compose build --build-arg TAG=${TAG}
 
 # 构建指定服务的镜像 (例如: make build-image service=backend)
 build-image:
 	@echo "Building Docker image for service: $(service) with tag: ${TAG}..."
-	@docker-compose build --build-arg TAG=${TAG} $(service)
+	@IMAGE_PREFIX=${IMAGE_PREFIX} docker-compose build --build-arg TAG=${TAG} $(service)
 
 # 在后台启动所有服务
 up:
 	@echo "Starting all services in detached mode..."
-	@docker-compose up -d
+	@IMAGE_PREFIX=${IMAGE_PREFIX} docker-compose up -d
 
 # 停止并删除所有服务、网络和卷
 down:
 	@echo "Stopping and removing all services, networks, and volumes..."
-	@docker-compose down -v
+	@IMAGE_PREFIX=${IMAGE_PREFIX} docker-compose down -v
 
 # 重启服务
 restart: down up
@@ -31,7 +34,7 @@ restart: down up
 # 查看所有服务的日志
 logs:
 	@echo "Tailing logs for all services..."
-	@docker-compose logs -f
+	@IMAGE_PREFIX=${IMAGE_PREFIX} docker-compose logs -f
 
 # 进入指定服务的 shell (例如: make shell service=backend)
 shell:
