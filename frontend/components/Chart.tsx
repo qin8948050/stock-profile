@@ -4,19 +4,47 @@ import { Spin } from 'antd';
 import { merge } from 'lodash';
 
 interface ChartProps extends HTMLAttributes<HTMLDivElement> {
-  getData: () => Promise<any>;
+  getData: (params?: any) => Promise<any>; // Modified to accept params
+  params?: any; // New prop for passing parameters to getData
 }
 
 const DEFAULT_GRID_CONFIG = {
   grid: {
     left: '3%',
     right: '4%',
-    bottom: '3%',
+    bottom: '10%', // Default bottom for legend
     containLabel: true,
   },
 };
 
-const Chart: FC<ChartProps> = ({ getData, ...rest }) => {
+const DEFAULT_TOOLTIP_CONFIG = {
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'cross' },
+    formatter: (params: any[]) => {
+      const valueParam = params.find(p => p.seriesName === '数值');
+      const rateParam = params.find(p => p.seriesName === '增长率');
+      if (!valueParam || !rateParam) return '';
+      
+      const category = valueParam.name;
+      const value = valueParam.value ? Number(valueParam.value).toFixed(2) : 'N/A';
+      const rate = rateParam.value ? Number(rateParam.value).toFixed(2) : 'N/A';
+
+      return `${category}<br/>${valueParam.seriesName}: ${value}<br/>${rateParam.seriesName}: ${rate}%`;
+    }
+  },
+};
+
+const DEFAULT_TITLE_CONFIG = {
+  title: {
+    left: 'center',
+    textStyle: {
+      fontSize: 14,
+    }
+  }
+};
+
+const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => { // Added params to destructuring
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +58,10 @@ const Chart: FC<ChartProps> = ({ getData, ...rest }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const fetchedOption = await getData();
+        const fetchedOption = await getData(params); // Pass params to getData
         if (isMounted && chartInstance.current) {
-          // Merge the fetched option with our default grid config
-          const finalOption = merge({}, DEFAULT_GRID_CONFIG, fetchedOption);
+          // Merge the fetched option with our default title, grid and tooltip config
+          const finalOption = merge({}, DEFAULT_TITLE_CONFIG, DEFAULT_TOOLTIP_CONFIG, DEFAULT_GRID_CONFIG, fetchedOption);
           chartInstance.current.setOption(finalOption);
         }
       } catch (error) {
@@ -53,7 +81,7 @@ const Chart: FC<ChartProps> = ({ getData, ...rest }) => {
       isMounted = false;
       chartInstance.current?.dispose();
     };
-  }, [getData]);
+  }, [getData, params]); // Added params to dependency array
 
   // Resize chart with window
   useEffect(() => {

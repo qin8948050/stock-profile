@@ -6,7 +6,7 @@ import { AntDesignOutlined, UploadOutlined } from "@ant-design/icons";
 import notify from "../../../utils/notify";
 import { uploadFinancialStatement } from "../../../lib/financialApi";
 import GradientButton from "@/components/Buttons";
-import ChartGrid from "@/components/ChartGrid"; // Import the new ChartGrid component
+import ChartGrid from "@/components/ChartGrid";
 
 interface FinancialTabProps {
   companyId: number;
@@ -18,27 +18,74 @@ const STATEMENT_TYPE_OPTIONS = [
   { label: "现金流量表 (Cash Flow Statement)", value: "cash" },
 ];
 
-// Mock data fetching from backend
-const getChartData = async () => {
+// Mock data fetching from backend with more details
+// Now accepts chartParams to customize the chart
+const getChartData = async (chartParams?: { title: string }) => {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  const randomData = Array.from({ length: 7 }, () => Math.floor(Math.random() * 500) + 800);
-  console.log(randomData)
+
+  // 1. Generate base data
+  const categories = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+  const values = Array.from({ length: 7 }, () => Math.floor(Math.random() * 500) + 800);
+
+  // 2. Calculate growth rate
+  const growthRates = [0]; // Growth rate for the first year is 0
+  for (let i = 1; i < values.length; i++) {
+    const previous = values[i - 1];
+    const current = values[i];
+    const rate = previous === 0 ? 0 : ((current - previous) / previous) * 100;
+    growthRates.push(rate);
+  }
+
   return {
-    tooltip: {
-      trigger: 'axis'
+    title: { // Title now comes from chartParams
+      text: chartParams?.title,
     },
-    xAxis: {
-      type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    legend: {
+      data: ['数值', '增长率'],
+      top: 'bottom' // Keep legend at bottom
     },
-    yAxis: {
-      type: 'value'
-    },
-    series: [{
-      data: randomData,
-      type: 'line'
-    }]
+    // Removed grid and tooltip as they are now handled by Chart.tsx defaults
+    xAxis: [
+      {
+        type: 'category',
+        data: categories,
+        name: '年度',
+        nameLocation: 'middle',
+        nameGap: 22,
+      }
+    ],
+    yAxis: [
+      {
+        type: 'value',
+        name: '数值 (万元)',
+        min: 0,
+        axisLabel: { formatter: '{value}' }
+      },
+      {
+        type: 'value',
+        name: '增长率',
+        min: -50,
+        max: 50,
+        position: 'right',
+        axisLabel: { formatter: '{value} %' }
+      }
+    ],
+    series: [
+      {
+        name: '数值',
+        type: 'bar',
+        yAxisIndex: 0,
+        data: values,
+      },
+      {
+        name: '增长率',
+        type: 'line',
+        yAxisIndex: 1,
+        data: growthRates,
+        smooth: true,
+      }
+    ]
   };
 };
 
@@ -48,8 +95,13 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
   const [fileList, setFileList] = useState<any[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // For demonstration, let's create an array of getData functions for multiple charts
-  const chartGetters = Array.from({ length: 4 }).map(() => getChartData);
+  // For demonstration, create an array of chart items with different titles
+  const chartItems = [
+    { getData: getChartData, params: { title: '总收入分析' } },
+    { getData: getChartData, params: { title: '净利润趋势' } },
+    { getData: getChartData, params: { title: '现金流概览' } },
+    { getData: getChartData, params: { title: '资产负债变化' } },
+  ];
 
   const handleUpload = async (values: { statementType: string }) => {
     if (fileList.length === 0) {
@@ -103,7 +155,7 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
           <GradientButton size="middle" type="primary" icon={<AntDesignOutlined />} onClick={() => setIsModalVisible(true)}>上传财报</GradientButton>
         }
       >
-        <ChartGrid chartGetters={chartGetters} chartHeight={300} />
+        <ChartGrid chartItems={chartItems} chartHeight={350} />
       </Card>
       <Modal
         title="上传财务报表"
@@ -128,7 +180,7 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
             <Upload {...props}>
               <Button icon={<UploadOutlined />}>选择 JSON 文件</Button>
             </Upload>
-          </Form.Item>
+            </Form.Item>
 
           <Form.Item>
             <Button
