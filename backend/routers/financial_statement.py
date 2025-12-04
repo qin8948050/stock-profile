@@ -1,16 +1,36 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from repositories import CompanyRepository, get_company_repo
 from repositories.financial_repo import get_statement_dependencies
+from schemas.chart import ChartData
 from schemas.financial import FinancialSheetUpsert, StatementUploadForm
 from schemas.response import ApiResponse
+from services.financial_service import FinancialMetricService
 
 router = APIRouter(prefix="/financial-statements", tags=["Financial Statements"])
 
 
+@router.get("/financial-metric", response_model=ApiResponse[ChartData])
+def get_financial_metric(
+    company_id: int = Query(..., description="The ID of the company"),
+    metric_name: str = Query(..., description="The name of the financial metric (e.g., 'total_revenue')"),
+    db: Session = Depends(get_db),
+    service: FinancialMetricService = Depends(),
+):
+    """
+    Get financial metric data for a company, formatted for charting.
+    """
+    try:
+        chart_data = service.get_metric_chart_data(db, company_id, metric_name)
+        return ApiResponse.success(data=chart_data)
+    except HTTPException as e:
+        return ApiResponse.error(msg=e.detail, status=e.status_code)
+    except Exception as e:
+        # Catch-all for unexpected errors
+        return ApiResponse.error(msg=str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.post("/upload", response_model=ApiResponse)

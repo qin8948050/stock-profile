@@ -1,4 +1,5 @@
 import defaultClient from "@/lib/apiClient";
+import { ChartData } from "../types/chart";
 
 type StatementUploader = {
     company_id:number;
@@ -29,4 +30,10 @@ export const uploadFinancialStatement = async (
         console.error("Failed to upload financial statement:", error);
         throw error;
     }
+};
+
+export const getFinancialMetric = (companyId: number, metricName: string): Promise<ChartData> => {
+    return defaultClient.request<ChartData>(
+        `financial-statements/financial-metric?company_id=${companyId}&metric_name=${metricName}`
+    );
 };

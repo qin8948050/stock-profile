@@ -1,18 +1,18 @@
 import { FC, HTMLAttributes, useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import { Spin } from 'antd';
+import { Spin, Modal } from 'antd';
 import { merge } from 'lodash';
 
 interface ChartProps extends HTMLAttributes<HTMLDivElement> {
-  getData: (params?: any) => Promise<any>; // Modified to accept params
-  params?: any; // New prop for passing parameters to getData
+  getData: (params?: any) => Promise<any>;
+  params?: any;
 }
 
 const DEFAULT_GRID_CONFIG = {
   grid: {
     left: '3%',
     right: '4%',
-    bottom: '10%', // Default bottom for legend
+    bottom: '10%',
     containLabel: true,
   },
 };
@@ -44,11 +44,17 @@ const DEFAULT_TITLE_CONFIG = {
   }
 };
 
-const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => { // Added params to destructuring
+const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [chartOption, setChartOption] = useState<any>(null);
 
+  const modalChartRef = useRef<HTMLDivElement>(null);
+  const modalChartInstance = useRef<echarts.ECharts | null>(null);
+
+  // Effect for the main chart
   useEffect(() => {
     let isMounted = true;
     if (chartRef.current) {
@@ -58,15 +64,16 @@ const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => { // Added param
     const loadData = async () => {
       setLoading(true);
       try {
-        const fetchedOption = await getData(params); // Pass params to getData
-        if (isMounted && chartInstance.current) {
-          // Merge the fetched option with our default title, grid and tooltip config
+        const fetchedOption = await getData(params);
+        if (isMounted) {
           const finalOption = merge({}, DEFAULT_TITLE_CONFIG, DEFAULT_TOOLTIP_CONFIG, DEFAULT_GRID_CONFIG, fetchedOption);
-          chartInstance.current.setOption(finalOption);
+          setChartOption(finalOption);
+          if (chartInstance.current) {
+            chartInstance.current.setOption(finalOption);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch chart data:", error);
-        // You could display an error message here
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -76,14 +83,13 @@ const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => { // Added param
 
     loadData();
 
-    // Handle component unmount
     return () => {
       isMounted = false;
       chartInstance.current?.dispose();
     };
-  }, [getData, params]); // Added params to dependency array
+  }, [getData, params]);
 
-  // Resize chart with window
+  // Resize main chart with window
   useEffect(() => {
     const handleResize = () => {
       chartInstance.current?.resize();
@@ -94,15 +100,73 @@ const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => { // Added param
     };
   }, []);
 
+  // Function to handle modal opening and initialize the modal chart
+  const handleModalAfterOpen = () => {
+    if (modalChartRef.current && chartOption) {
+      modalChartInstance.current = echarts.init(modalChartRef.current);
+      modalChartInstance.current.setOption(chartOption);
+      modalChartInstance.current.resize(); // Ensure it resizes to modal's dimensions
+
+      const handleModalResize = () => {
+        modalChartInstance.current?.resize();
+      };
+      window.addEventListener('resize', handleModalResize);
+
+      // Cleanup function for modal chart
+      const cleanupModalChart = () => {
+        modalChartInstance.current?.dispose();
+        modalChartInstance.current = null;
+        window.removeEventListener('resize', handleModalResize);
+      };
+      // Store cleanup function to be called when modal closes
+      (modalChartRef.current as any).cleanup = cleanupModalChart;
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    // Call cleanup function if it exists
+    if (modalChartRef.current && (modalChartRef.current as any).cleanup) {
+      (modalChartRef.current as any).cleanup();
+    }
+  };
+
+  const handleChartClick = () => {
+    setIsModalVisible(true);
+  };
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', ...rest.style }}>
-      {loading && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Spin />
-        </div>
-      )}
-      <div ref={chartRef} {...rest} style={{ visibility: loading ? 'hidden' : 'visible', height: '100%', width: '100%' }} />
-    </div>
+    <>
+      <div
+        style={{ position: 'relative', width: '100%', height: '100%', cursor: 'pointer', ...rest.style }}
+        onClick={handleChartClick}
+      >
+        {loading && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Spin />
+          </div>
+        )}
+        <div ref={chartRef} {...rest} style={{ visibility: loading ? 'hidden' : 'visible', height: '100%', width: '100%' }} />
+      </div>
+
+      <Modal
+        title={chartOption?.title?.text || "Chart Detail"}
+        open={isModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width="80%"
+        destroyOnClose
+        afterOpenChange={(open) => {
+          if (open) {
+            handleModalAfterOpen();
+          }
+        }}
+      >
+        {chartOption && (
+          <div ref={modalChartRef} style={{ height: '60vh', width: '100%' }} />
+        )}
+      </Modal>
+    </>
   );
 };
 
