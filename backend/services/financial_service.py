@@ -3,18 +3,16 @@ from typing import Dict, Any, List
 from fastapi import HTTPException, status
 
 from schemas.chart import ChartData
-from repositories.financial_repo import BalanceStatementRepository, IncomeStatementRepository
-from models import IncomeSheetStatementCore, BalanceSheetStatementCore, IncomeSheetStatementEAV, BalanceSheetStatementEAV
+from repositories.financial_repo import BalanceStatementRepository, IncomeStatementRepository,CashStatementRepository
+from models import IncomeSheetStatementCore, BalanceSheetStatementCore, IncomeSheetStatementEAV, BalanceSheetStatementEAV,CashSheetStatementEAV,CashSheetStatementCore
 from .metrics import get_metric_config
 
 # A mapping to determine which repository and tables to use for a given metric.
 # This can be expanded or moved to a more dynamic discovery mechanism later.
 METRIC_MAPPING = {
-    "total_revenue": (IncomeStatementRepository, IncomeSheetStatementCore, None),
-    "net_income": (IncomeStatementRepository, IncomeSheetStatementCore, None),
-    "total_assets": (BalanceStatementRepository, BalanceSheetStatementCore, None),
-    "total_liabilities": (BalanceStatementRepository, BalanceSheetStatementCore, None),
-    "other_comprehensive_income_loss": (IncomeStatementRepository, IncomeSheetStatementCore, IncomeSheetStatementEAV),
+    "total_assets": (BalanceStatementRepository, BalanceSheetStatementCore, CashSheetStatementEAV),
+    "total_liabilities": (BalanceStatementRepository, BalanceSheetStatementCore, CashSheetStatementEAV),
+    "cash_at_end_of_period":(CashStatementRepository,CashSheetStatementCore,CashSheetStatementEAV)
 }
 
 def get_metric_time_series(db: Session, company_id: int, metric_name: str) -> List[Dict[str, Any]]:

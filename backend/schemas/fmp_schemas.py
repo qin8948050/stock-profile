@@ -97,3 +97,52 @@ class FMPIncomeStatementSchema(BaseModel):
         from_attributes=True,
         extra='allow'
     )
+
+class FMPCashFlowStatementSchema(BaseModel):
+    """
+    Represents the structure of a cash flow statement item from the FMP API.
+    It automatically converts camelCase from the API to snake_case in Python.
+    """
+    date: str
+    symbol: str
+    cik: Optional[str] = None
+    filing_date: Optional[str] = Field(alias="filingDate")
+    fiscal_year: str = Field(alias="fiscalYear")
+    period: str
+    net_income: Optional[int] = None
+    depreciation_and_amortization: Optional[int] = None
+    deferred_income_tax: Optional[int] = None
+    stock_based_compensation: Optional[int] = None
+    change_in_working_capital: Optional[int] = None
+    accounts_receivables: Optional[int] = None
+    inventory: Optional[int] = None
+    accounts_payables: Optional[int] = None
+    other_working_capital: Optional[int] = None
+    other_non_cash_items: Optional[int] = None
+    net_cash_provided_by_operating_activities: Optional[int] = None
+    investments_in_property_plant_and_equipment: Optional[int] = None
+    acquisitions_net: Optional[int] = None
+    purchases_of_investments: Optional[int] = None
+    sales_maturities_of_investments: Optional[int] = None
+    other_investing_activites: Optional[int] = None
+    net_cash_used_for_investing_activites: Optional[int] = None
+    debt_repayment: Optional[int] = None
+    common_stock_issued: Optional[int] = None
+    common_stock_repurchased: Optional[int] = None
+    dividends_paid: Optional[int] = None
+    other_financing_activites: Optional[int] = None
+    net_cash_used_provided_by_financing_activities: Optional[int] = None
+    effect_of_forex_changes_on_cash: Optional[int] = None
+    net_change_in_cash: Optional[int] = None
+    cash_at_end_of_period: Optional[int] = None
+    cash_at_beginning_of_period: Optional[int] = None
+    operating_cash_flow: Optional[int] = None
+    capital_expenditure: Optional[int] = None
+    free_cash_flow: Optional[int] = None
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+        extra='allow'
+    )

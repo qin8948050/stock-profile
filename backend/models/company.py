@@ -74,13 +74,14 @@ class Company(Base, TimestampMixin):
     industry_profile = relationship("IndustryProfile", back_populates="company", uselist=False, cascade="all, delete-orphan")
     # competitiveness_profile = relationship("CompetitivenessProfile", back_populates="company", uselist=False, cascade="all, delete-orphan")
 
-    # 一对多关联: 一个公司可以有多张资产负债表
+    # 一对多关联: 一个公司可以有多张财务报表
     balance_sheets = relationship("BalanceSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
     income_sheets = relationship("IncomeSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
+    cash_sheets = relationship("CashSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
 
 
     def __repr__(self):
-        return f"<Company(name={self.name}, employee_count={self.employee_count})>"
+        return f"<Company(name={self.name}, ticker={self.ticker})>"
 
 
 class IndustryProfile(Base, TimestampMixin):

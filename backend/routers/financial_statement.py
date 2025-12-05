@@ -6,7 +6,7 @@ from core.database import get_db
 from repositories import CompanyRepository, get_company_repo
 from repositories.financial_repo import get_statement_dependencies
 from schemas.chart import ChartData
-from schemas.financial import FinancialSheetUpsert, StatementUploadForm
+from schemas.financial import FinancialSheetUpsert, StatementUploadForm, FinancialStatementType
 from schemas.response import ApiResponse
 from services.financial_service import FinancialMetricService
 

@@ -31,6 +31,7 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
   const chartItems = [
     { getData: getChartData, params: { metricName: 'total_assets' } },
     { getData: getChartData, params: { metricName: 'total_liabilities' } },
+    { getData: getChartData, params: { metricName: 'cash_at_end_of_period' } },
   ];
 
   const handleUpload = async (values: { statementType: string }) => {
