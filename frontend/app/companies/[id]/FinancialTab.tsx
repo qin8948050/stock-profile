@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import { Card, Select, Upload, Button, Form, Modal } from "antd";
 import { AntDesignOutlined, UploadOutlined } from "@ant-design/icons";
 import notify from "../../../utils/notify";
-import { getFinancialMetric, uploadFinancialStatement } from "../../../lib/financialApi";
+import { uploadFinancialStatement } from "../../../lib/financialApi";
 import GradientButton from "@/components/Buttons";
-import ChartGrid from "@/components/ChartGrid";
+import ChartGrid, {ChartItem} from "@/components/ChartGrid";
 
 interface FinancialTabProps {
   companyId: number;
@@ -24,14 +24,11 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
   const [fileList, setFileList] = useState<any[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const getChartData = (params: { metricName: string }) => {
-    return getFinancialMetric(companyId, params.metricName);
-  };
-
-  const chartItems = [
-    { getData: getChartData, params: { metricName: 'total_assets' } },
-    { getData: getChartData, params: { metricName: 'total_liabilities' } },
-    { getData: getChartData, params: { metricName: 'cash_at_end_of_period' } },
+  // Add metric list
+  const chartItems: ChartItem[] = [
+    { metricName: 'total_assets' },
+    { metricName: 'total_liabilities' },
+    { metricName: 'cash_at_end_of_period' },
   ];
 
   const handleUpload = async (values: { statementType: string }) => {
@@ -86,7 +83,7 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
           <GradientButton size="middle" type="primary" icon={<AntDesignOutlined />} onClick={() => setIsModalVisible(true)}>上传财报</GradientButton>
         }
       >
-        <ChartGrid chartItems={chartItems} chartHeight={350} />
+        <ChartGrid chartItems={chartItems} companyId={companyId} chartHeight={350} />
       </Card>
       <Modal
         title="上传财务报表"

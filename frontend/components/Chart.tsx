@@ -2,10 +2,11 @@ import { FC, HTMLAttributes, useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { Spin, Modal } from 'antd';
 import { merge } from 'lodash';
+import { getFinancialMetric } from '../lib/financialApi';
 
 interface ChartProps extends HTMLAttributes<HTMLDivElement> {
-  getData: (params?: any) => Promise<any>;
-  params?: any;
+  companyId: number;
+  metricName: string;
 }
 
 const DEFAULT_GRID_CONFIG = {
@@ -44,7 +45,7 @@ const DEFAULT_TITLE_CONFIG = {
   }
 };
 
-const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => {
+const Chart: FC<ChartProps> = ({ companyId, metricName, ...rest }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +65,7 @@ const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const fetchedOption = await getData(params);
+        const fetchedOption = await getFinancialMetric(companyId, metricName);
         if (isMounted) {
           const finalOption = merge({}, DEFAULT_TITLE_CONFIG, DEFAULT_TOOLTIP_CONFIG, DEFAULT_GRID_CONFIG, fetchedOption);
           setChartOption(finalOption);
@@ -87,7 +88,7 @@ const Chart: FC<ChartProps> = ({ getData, params, ...rest }) => {
       isMounted = false;
       chartInstance.current?.dispose();
     };
-  }, [getData, params]);
+  }, [companyId, metricName]);
 
   // Resize main chart with window
   useEffect(() => {
