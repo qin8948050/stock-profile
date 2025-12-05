@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from .base_metric import BaseMetric, value_label, ratio_label
+from .base_metric import BaseMetric, value_label, ratio_label, UNIT_HUNDRED_MILLION
 from schemas.chart import ChartData, ChartAxis, ChartSeries, ChartTitle, ChartLegend
 
 class TotalLiabilitiesMetric(BaseMetric):
@@ -7,14 +7,13 @@ class TotalLiabilitiesMetric(BaseMetric):
     Configuration for the Total Assets metric chart.
     """
     metric_name = "total_liabilities"
+    value_unit = UNIT_HUNDRED_MILLION
 
     def get_chart_data(self, time_series_data: List[Dict[str, Any]]) -> ChartData:
         if not time_series_data:
             return ChartData()
 
-        categories = [d["year"] for d in time_series_data]
-
-        values = [round((d["value"] or 0) / 100000000, 2) for d in time_series_data]
+        categories, values = self._process_time_series_data(time_series_data)
         growth_rates = self._calculate_growth_rates(values)
 
         return ChartData(
