@@ -9,11 +9,20 @@ class TotalLiabilitiesMetric(BaseMetric):
     metric_name = "total_liabilities"
     value_unit = UNIT_HUNDRED_MILLION
 
-    def get_chart_data(self, time_series_data: List[Dict[str, Any]]) -> ChartData:
-        if not time_series_data:
-            return ChartData()
+    def get_chart_data(self, time_series_data: Dict[str, List[Dict[str, Any]]]) -> ChartData:
+        """
+        Generates the chart data by leveraging the common processing methods from the base class.
+        """
+        # For a single metric, the data is under its own metric_name key.
+        total_liabilities_data = time_series_data.get(self.metric_name, [])
 
-        categories, values = self._process_time_series_data(time_series_data)
+        if not total_liabilities_data:
+            return ChartData(
+                title=ChartTitle(text="Total Liabilities (No Data)"),
+                series=[]
+            )
+
+        categories, values = self._process_time_series_data(total_liabilities_data)
         growth_rates = self._calculate_growth_rates(values)
 
         return ChartData(

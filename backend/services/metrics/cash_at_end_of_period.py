@@ -9,14 +9,20 @@ class CashAtEndOfPeriodMetric(BaseMetric):
     metric_name = "cash_at_end_of_period"
     value_unit = UNIT_HUNDRED_MILLION
 
-    def get_chart_data(self, time_series_data: List[Dict[str, Any]]) -> ChartData:
-        if not time_series_data:
+    def get_chart_data(self, time_series_data: Dict[str, List[Dict[str, Any]]]) -> ChartData:
+        """
+        Generates the chart data by leveraging the common processing methods from the base class.
+        """
+        # For a single metric, the data is under its own metric_name key.
+        cash_data = time_series_data.get(self.metric_name, [])
+
+        if not cash_data:
             return ChartData(
-                title=ChartTitle(text="Total Assets (No Data)"),
+                title=ChartTitle(text="Cash at End of Period (No Data)"),
                 series=[]
             )
 
-        categories, values = self._process_time_series_data(time_series_data)
+        categories, values = self._process_time_series_data(cash_data)
         growth_rates = self._calculate_growth_rates(values)
 
         return ChartData(

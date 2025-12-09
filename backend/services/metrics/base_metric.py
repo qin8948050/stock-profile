@@ -45,20 +45,30 @@ class BaseMetric(ABC):
     Subclasses should provide metric-specific configurations.
     """
     metric_name: str = "base_metric"
+    # A list of metric names that this metric depends on.
+    # For single-metric charts, this will be an empty list.
+    dependencies: List[str] = []
     # Subclasses should override this with a descriptive unit constant, e.g., UNIT_HUNDRED_MILLION
     value_unit: int = UNIT_ONE
 
     @abstractmethod
-    def get_chart_data(self, time_series_data: List[Dict[str, Any]]) -> ChartData:
+    def get_chart_data(self, time_series_data: Dict[str, List[Dict[str, Any]]]) -> ChartData:
         """
         Generates the ChartData object for the metric using the provided time series data.
+        For single-metric charts, the dictionary will contain one entry.
+        For calculated metrics, it will contain entries for each dependency.
         """
         raise NotImplementedError
 
-    def _process_time_series_data(self, time_series_data: List[Dict[str, Any]]) -> (List[str], List[float]):
+    def _process_time_series_data(
+        self,
+        time_series_data: List[Dict[str, Any]],
+        metric_name: Optional[str] = None
+    ) -> (List[str], List[float]):
         """
         Processes raw time series data using pandas for value extraction and conversion.
         Returns categories (years) and processed values.
+        If metric_name is provided, it's used for error messaging.
         """
         if not time_series_data:
             return [], []

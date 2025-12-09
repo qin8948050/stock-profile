@@ -13,6 +13,7 @@ METRIC_REPOSITORY_MAPPING: Dict[str, Type[FinancialStatementRepository]] = {
     "total_assets": BalanceStatementRepository,
     "total_liabilities": BalanceStatementRepository,
     "cash_at_end_of_period": CashStatementRepository,
+    "asset_liability_ratio": BalanceStatementRepository,
     # Add other metric-to-repository mappings here
 }
 
@@ -25,34 +26,39 @@ class FinancialMetricService:
 
     def get_metric_chart_data(self, company_id: int, metric_name: str) -> ChartData:
         """
-        Generates chart data for a given financial metric by dynamically loading its configuration
-        and fetching data via the appropriate repository.
+        Generates chart data for a given financial metric. It supports both single-metric
+        charts and calculated metrics derived from multiple data series.
         """
-        # 1. Get the specific metric configuration class (for chart styling and logic)
+        # 1. Get the specific metric configuration class
         metric_config_class = get_metric_config(metric_name)
         if not metric_config_class:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"No chart configuration found for metric: '{metric_name}'"
             )
-
-        # 2. Determine the correct repository to use for fetching data
-        # We default to IncomeStatementRepository if not specified, as it's a common source.
-        repo_class = METRIC_REPOSITORY_MAPPING.get(metric_name, IncomeStatementRepository)
-        repository = repo_class()
-
-        # 3. Fetch the raw time series data using the repository
-        time_series_data = repository.get_metric_time_series(self.db, company_id, metric_name)
-
-        # Handle case where no data is found for the metric
-        if not time_series_data:
-             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail=f"Metric '{metric_name}' not found or no data available for the given company."
-            )
-
-        # 4. Instantiate the metric configuration and generate the chart data
+        
         metric_config_instance = metric_config_class()
-        chart_data = metric_config_instance.get_chart_data(time_series_data)
+        
+        # 2. Determine the required metrics (either the metric itself or its dependencies)
+        metric_dependencies = metric_config_instance.dependencies or [metric_name]
+        
+        # 3. Fetch time series data for all required metrics
+        time_series_data_map: Dict[str, List[Dict[str, Any]]] = {}
+        for dep_metric_name in metric_dependencies:
+            repo_class = METRIC_REPOSITORY_MAPPING.get(dep_metric_name, IncomeStatementRepository)
+            repository = repo_class()
+            
+            time_series_data = repository.get_metric_time_series(self.db, company_id, dep_metric_name)
+            
+            if not time_series_data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Data not found for dependency '{dep_metric_name}' of metric '{metric_name}'"
+                )
+            time_series_data_map[dep_metric_name] = time_series_data
+
+        # 4. Generate the chart data using the fetched data
+        # For single metrics, the map will have one entry. For calculated metrics, it will have multiple.
+        chart_data = metric_config_instance.get_chart_data(time_series_data_map)
         
         return chart_data

@@ -12,18 +12,21 @@ class TotalAssetsMetric(BaseMetric):
     # Use the descriptive constant for the unit, making the code self-documenting.
     value_unit = UNIT_HUNDRED_MILLION
 
-    def get_chart_data(self, time_series_data: List[Dict[str, Any]]) -> ChartData:
+    def get_chart_data(self, time_series_data: Dict[str, List[Dict[str, Any]]]) -> ChartData:
         """
         Generates the chart data by leveraging the common processing methods from the base class.
         """
-        if not time_series_data:
+        # For a single metric, the data is under its own metric_name key.
+        total_assets_data = time_series_data.get(self.metric_name, [])
+
+        if not total_assets_data:
             return ChartData(
                 title=ChartTitle(text="Total Assets (No Data)"),
                 series=[]
             )
 
         # Use the inherited helper methods for data processing
-        categories, values = self._process_time_series_data(time_series_data)
+        categories, values = self._process_time_series_data(total_assets_data)
         growth_rates = self._calculate_growth_rates(values)
 
         return ChartData(
