@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from models import BalanceSheetStatementCore,BalanceSheetStatementEAV
 from models import IncomeSheetStatementCore, IncomeSheetStatementEAV
 from models import CashSheetStatementCore, CashSheetStatementEAV
-from repositories.base import BaseRepository
+from repositories.base import BaseRepository, ModelType
 from schemas.financial import FinancialStatementType
 from schemas.fmp_schemas import FMPBalanceSheetSchema, FMPIncomeStatementSchema, FMPCashFlowStatementSchema
 from modules.data_loader.base import DataLoader
@@ -35,7 +35,50 @@ def get_statement_dependencies(statement_type: FinancialStatementType) -> tuple[
 
     return dependencies
 
-class BalanceStatementRepository(BaseRepository[BalanceSheetStatementCore]):
+class FinancialStatementRepository(BaseRepository[ModelType]):
+    """
+    A specialized base repository for financial statement models that supports
+    querying metrics from both core and EAV tables.
+    """
+    def get_metric_time_series(self, db: Session, company_id: int, metric_name: str) -> List[Dict[str, Any]]:
+        """
+        Fetches time series data for a given financial metric from the repository's
+        core and EAV tables.
+        """
+        query_results = []
+        core_model = self.model
+        eav_model = self.eav_model
+
+        # Check if the metric is a column in the core model
+        if hasattr(core_model, metric_name):
+            results = db.query(
+                core_model.fiscal_year.label("year"),
+                getattr(core_model, metric_name).label("value")
+            ).filter(core_model.company_id == company_id).order_by(core_model.fiscal_year).all()
+            query_results.extend([{"year": r.year, "value": r.value} for r in results])
+
+        # If not a core attribute, check if the metric is in the EAV table
+        elif self.eav_model and self.eav_fk_name:
+            results = db.query(
+                core_model.fiscal_year.label("year"),
+                eav_model.value_numeric.label("value")
+            ).join(eav_model, core_model.id == getattr(eav_model, self.eav_fk_name)) \
+            .filter(
+                core_model.company_id == company_id,
+                eav_model.attribute_name == metric_name
+            ).order_by(core_model.fiscal_year).all()
+            query_results.extend([{"year": r.year, "value": r.value} for r in results])
+
+        if not query_results:
+            return []
+
+        # Deduplicate by year and sort
+        final_results = list({(r['year']): r for r in query_results}.values())
+        final_results.sort(key=lambda x: x['year'])
+        
+        return final_results
+
+class BalanceStatementRepository(FinancialStatementRepository[BalanceSheetStatementCore]):
     def __init__(self):
         super().__init__(
             BalanceSheetStatementCore,
@@ -97,7 +140,7 @@ class BalanceStatementRepository(BaseRepository[BalanceSheetStatementCore]):
 
         return core_obj
 
-class IncomeStatementRepository(BaseRepository[IncomeSheetStatementCore]):
+class IncomeStatementRepository(FinancialStatementRepository[IncomeSheetStatementCore]):
     def __init__(self):
         super().__init__(
             IncomeSheetStatementCore,
@@ -147,7 +190,7 @@ class IncomeStatementRepository(BaseRepository[IncomeSheetStatementCore]):
 
         return core_obj
 
-class CashStatementRepository(BaseRepository[CashSheetStatementCore]):
+class CashStatementRepository(FinancialStatementRepository[CashSheetStatementCore]):
     def __init__(self):
         super().__init__(
             CashSheetStatementCore,

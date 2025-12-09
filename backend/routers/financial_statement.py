@@ -17,20 +17,17 @@ router = APIRouter(prefix="/financial-statements", tags=["Financial Statements"]
 def get_financial_metric(
     company_id: int = Query(..., description="The ID of the company"),
     metric_name: str = Query(..., description="The name of the financial metric (e.g., 'total_revenue')"),
-    db: Session = Depends(get_db),
-    service: FinancialMetricService = Depends(),
+    service: FinancialMetricService = Depends(FinancialMetricService),
 ):
     """
     Get financial metric data for a company, formatted for charting.
+    
+    This endpoint relies on the global exception handlers to manage errors.
+    - Expected errors (e.g., metric not found) are raised as HTTExceptions from the service layer.
+    - Unexpected errors are caught by the generic exception handler and returned as a 500 response.
     """
-    try:
-        chart_data = service.get_metric_chart_data(db, company_id, metric_name)
-        return ApiResponse.success(data=chart_data)
-    except HTTPException as e:
-        return ApiResponse.error(msg=e.detail, status=e.status_code)
-    except Exception as e:
-        # Catch-all for unexpected errors
-        return ApiResponse.error(msg=str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    chart_data = service.get_metric_chart_data(company_id, metric_name)
+    return ApiResponse.success(data=chart_data)
 
 
 @router.post("/upload", response_model=ApiResponse)
