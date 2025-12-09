@@ -29,6 +29,7 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
     { metricName: 'total_assets' },
     { metricName: 'total_liabilities' },
     { metricName: 'cash_at_end_of_period' },
+    { metricName: 'asset_liability_ratio' },
   ];
 
   const handleUpload = async (values: { statementType: string }) => {
