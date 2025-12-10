@@ -7,22 +7,22 @@ from repositories.financial_repo import BalanceStatementRepository, IncomeStatem
 from .metrics import get_metric_config
 from core.database import get_db
 
-# A mapping to determine which repository to use for a given metric.
-# We map the metric to the repository *class* for more flexible instantiation.
-METRIC_REPOSITORY_MAPPING: Dict[str, Type[FinancialStatementRepository]] = {
-    "total_assets": BalanceStatementRepository,
-    "total_liabilities": BalanceStatementRepository,
-    "cash_at_end_of_period": CashStatementRepository,
-    "asset_liability_ratio": BalanceStatementRepository,
-    # Add other metric-to-repository mappings here
-}
-
 class FinancialMetricService:
     def __init__(self, db: Session = Depends(get_db)):
         """
         Initializes the service with a database session dependency.
+        Initializes all relevant financial statement repositories.
         """
         self.db = db
+        self.income_repo = IncomeStatementRepository()
+        self.balance_repo = BalanceStatementRepository()
+        self.cash_repo = CashStatementRepository()
+        # Store all repositories in a list for easy iteration
+        self.all_repos: List[FinancialStatementRepository] = [
+            self.income_repo,
+            self.balance_repo,
+            self.cash_repo
+        ]
 
     def get_metric_chart_data(self, company_id: int, metric_name: str) -> ChartData:
         """
@@ -45,17 +45,19 @@ class FinancialMetricService:
         # 3. Fetch time series data for all required metrics
         time_series_data_map: Dict[str, List[Dict[str, Any]]] = {}
         for dep_metric_name in metric_dependencies:
-            repo_class = METRIC_REPOSITORY_MAPPING.get(dep_metric_name, IncomeStatementRepository)
-            repository = repo_class()
+            found_data = False
+            for repository in self.all_repos:
+                time_series_data = repository.get_metric_time_series(self.db, company_id, dep_metric_name)
+                if time_series_data:
+                    time_series_data_map[dep_metric_name] = time_series_data
+                    found_data = True
+                    break # Data found for this dependency, move to the next one
             
-            time_series_data = repository.get_metric_time_series(self.db, company_id, dep_metric_name)
-            
-            if not time_series_data:
+            if not found_data:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Data not found for dependency '{dep_metric_name}' of metric '{metric_name}'"
+                    detail=f"Data not found for dependency '{dep_metric_name}' of metric '{metric_name}' in any repository."
                 )
-            time_series_data_map[dep_metric_name] = time_series_data
 
         # 4. Generate the chart data using the fetched data
         # For single metrics, the map will have one entry. For calculated metrics, it will have multiple.

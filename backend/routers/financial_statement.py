@@ -1,4 +1,6 @@
 import json
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
 
@@ -9,9 +11,16 @@ from schemas.chart import ChartData
 from schemas.financial import FinancialSheetUpsert, StatementUploadForm, FinancialStatementType
 from schemas.response import ApiResponse
 from services.financial_service import FinancialMetricService
+from services.metrics import get_metric_names
 
 router = APIRouter(prefix="/financial-statements", tags=["Financial Statements"])
 
+
+@router.get("/financial-metric-list", response_model=ApiResponse[List[str]])
+def list_financial_metric(
+
+):
+    return ApiResponse.success(data=get_metric_names())
 
 @router.get("/financial-metric", response_model=ApiResponse[ChartData])
 def get_financial_metric(

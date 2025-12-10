@@ -50,6 +50,8 @@ class BaseMetric(ABC):
     dependencies: List[str] = []
     # Subclasses should override this with a descriptive unit constant, e.g., UNIT_HUNDRED_MILLION
     value_unit: int = UNIT_ONE
+    # If set to False, this metric will not be registered in the METRIC_REGISTRY
+    register_metric: bool = True
 
     @abstractmethod
     def get_chart_data(self, time_series_data: Dict[str, List[Dict[str, Any]]]) -> ChartData:
