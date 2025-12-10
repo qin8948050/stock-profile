@@ -37,3 +37,9 @@ export const getFinancialMetric = (companyId: number, metricName: string): Promi
         `financial-statements/financial-metric?company_id=${companyId}&metric_name=${metricName}`
     );
 };
+
+export const getFinancialMetricList = (companyId: number): Promise<string[]> => {
+    return defaultClient.request<string[]>(
+        `financial-statements/financial-metric-list?company_id=${companyId}`
+    );
+};

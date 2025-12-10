@@ -2,12 +2,8 @@ import { FC } from 'react';
 import { Row, Col } from 'antd';
 import Chart from './Chart';
 
-export interface ChartItem {
-  metricName: string;
-}
-
 interface ChartGridProps {
-  chartItems: ChartItem[];
+  chartItems: string[];
   companyId: number;
   chartHeight?: string | number;
 }
@@ -19,10 +15,10 @@ const ChartGrid: FC<ChartGridProps> = ({ chartItems, companyId, chartHeight = '3
 
   return (
     <Row gutter={[16, 16]}>
-      {chartItems.map((chartItem, index) => (
+      {chartItems.map((metricName, index) => (
         <Col key={index} xs={24} sm={12} md={12} lg={8} xl={6}>
           <div style={{ height: chartHeight, border: '1px solid #f0f0f0', borderRadius: '8px', padding: '8px' }}>
-            <Chart companyId={companyId} metricName={chartItem.metricName} />
+            <Chart companyId={companyId} metricName={metricName} />
           </div>
         </Col>
       ))}

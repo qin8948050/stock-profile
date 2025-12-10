@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Select, Upload, Button, Form, Modal } from "antd";
 import { AntDesignOutlined, UploadOutlined } from "@ant-design/icons";
 import notify from "../../../utils/notify";
-import { uploadFinancialStatement } from "../../../lib/financialApi";
+import { uploadFinancialStatement, getFinancialMetricList } from "../../../lib/financialApi";
 import GradientButton from "@/components/Buttons";
-import ChartGrid, {ChartItem} from "@/components/ChartGrid";
+import ChartGrid from "@/components/ChartGrid";
 
 interface FinancialTabProps {
   companyId: number;
@@ -23,14 +23,20 @@ export default function FinancialTab({ companyId }: FinancialTabProps) {
   const [uploading, setUploading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [chartItems, setChartItems] = useState<string[]>([]);
 
-  // Add metric list
-  const chartItems: ChartItem[] = [
-    { metricName: 'total_assets' },
-    { metricName: 'total_liabilities' },
-    { metricName: 'cash_at_end_of_period' },
-    { metricName: 'asset_liability_ratio' },
-  ];
+  useEffect(() => {
+    const fetchMetricList = async () => {
+      try {
+        const metricList = await getFinancialMetricList(companyId);
+        setChartItems(metricList);
+      } catch (error) {
+        notify.error(error, "获取财务指标列表失败");
+      }
+    };
+
+    fetchMetricList();
+  }, [companyId]);
 
   const handleUpload = async (values: { statementType: string }) => {
     if (fileList.length === 0) {
