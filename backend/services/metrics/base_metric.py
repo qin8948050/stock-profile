@@ -23,20 +23,25 @@ UNITS = {
     "billion": UNIT_BILLION,
 }
 
-# (ratio_label, value_label, etc. remain the same)
-ratio_label={
+# Label for growth rate (used for line charts), positioned below the data point.
+ratio_label = {
     "show": True,
     "position": "top",
     "formatter": "{c}%",
-    "color": "#ffffff",
-    "fontSize": 14,
-    "fontWeight": "bold",
-    "textBorderColor": "rgba(0,0,0,0.8)",
-    "textBorderWidth": 3,
-    "textShadowColor": "rgba(0,0,0,0.4)",
-    "textShadowBlur": 4,
+    "fontSize": 12,
+    # "fontWeight": "bold",
+    "color": "red",  # Set label color to red
 }
-value_label={"show": True, "position": "inside", "fontSize": 14, "formatter": "{c}"}
+
+# Label for the absolute value (used for bar charts), positioned below the bar.
+# It is offset to appear above the ratio_label if they are used together.
+value_label = {
+    "show": True,
+    "position": "bottom",
+    "formatter": "{c}",
+    "fontSize": 12,
+    "offset": [0, 5],  # Moves the label up to be above the ratio_label
+}
 
 
 class BaseMetric(ABC):

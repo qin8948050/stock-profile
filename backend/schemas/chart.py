@@ -6,10 +6,10 @@ class ChartTitle(BaseModel):
 
 class ChartLegend(BaseModel):
     data: List[str] = []
-    top: Optional[str] =None
-    left: Optional[str] =None
-    right: Optional[str] =None
-    bottom: Optional[str]=None
+    top: Optional[Union[int, str]] =None
+    left: Optional[Union[int, str]] =None
+    right: Optional[Union[int, str]] =None
+    bottom: Optional[Union[int, str]]=None
 
 class ChartAxis(BaseModel):
     type: str

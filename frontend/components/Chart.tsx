@@ -13,7 +13,7 @@ const DEFAULT_GRID_CONFIG = {
   grid: {
     left: '3%',
     right: '4%',
-    bottom: '10%',
+    bottom: '20%',
     containLabel: true,
   },
 };

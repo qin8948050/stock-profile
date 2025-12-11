@@ -4,10 +4,10 @@ export interface ChartTitle {
 
 export interface ChartLegend {
     data: string[];
-    top?: string;
-    left?: string;
-    right?: string;
-    bottom?: string;
+    top?: (string|number);
+    left?: (string|number);
+    right?: (string|number);
+    bottom?: (string|number);
 }
 
 export interface ChartAxis {

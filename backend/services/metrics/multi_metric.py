@@ -92,8 +92,8 @@ class MultiMetric(BaseMetric):
 
         return ChartData(
             title=ChartTitle(text=self.chart_title),
-            legend=ChartLegend(data=["值", "增长率"], right='right'),
-            xAxis=[ChartAxis(type="category", data=categories, name="年份", nameLocation="middle", nameGap=30, axisLabel={"show": True})],
+            legend=ChartLegend(data=["值", "增长率"], bottom=2,left=150),
+            xAxis=[ChartAxis(type="category", data=categories, name="", nameLocation="middle", nameGap=30, axisLabel={"show": False})],
             yAxis=[
                 ChartAxis(type="value", axisLabel={"formatter": "{value}"}),
                 ChartAxis(type="value", position="right", axisLabel={"formatter": "{value} %"})
