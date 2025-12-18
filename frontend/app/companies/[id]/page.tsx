@@ -7,6 +7,7 @@ import CardWithTabs from "../../../components/CardWithTabs";
 import ProfileTab from "./ProfileTab";
 import FinancialTab from "./FinancialTab"; // Import the new FinancialTab
 import { fetchCompany } from "../../../lib/api";
+import BusinessTab from "@/app/companies/[id]/BusinessTab";
 
 export default function CompanyDetailPage() {
   const params = useParams();
@@ -38,6 +39,11 @@ export default function CompanyDetailPage() {
       children: <FinancialTab companyId={id} />, // Use the new FinancialTab component
     },
     // Add more tabs here in the future
+      {
+          key: "business",
+          label:"商业分析",
+          children: <BusinessTab companyId={id} />
+      }
   ];
 
   if (loading) {

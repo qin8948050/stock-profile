@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Table, Button, Modal, Form, Input, InputNumber, Space, Popconfirm, message } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { fetchCompanies, createCompany, deleteCompany } from "../../lib/companyApi";
 import notify from "../../utils/notify";
 import ActionBar from "../../components/ActionBar";
@@ -14,9 +15,16 @@ export default function CompaniesPage() {
   const [createVisible, setCreateVisible] = useState(false);
   const [form] = Form.useForm();
   const { data, loading, pagination, load } = usePagination<Company>(fetchCompanies);
-  console.log(pagination)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const selectedRowKeys = React.useMemo(() => {
+    const selected = searchParams.get('selected');
+    return selected ? selected.split(',').map(id => parseInt(id, 10)) : [];
+  }, [searchParams]);
+
   const onCreate = async (values: any) => {
-    console.log("onFinish called", values);
     try {
       await createCompany(values);
       notify.success("创建成功");
@@ -24,7 +32,6 @@ export default function CompaniesPage() {
       form.resetFields();
       load(pagination);
     } catch (err: any) {
-      // ApiClient throws an Error containing backend msg when status !== 200
       notify.error(err, "创建失败");
     }
   };
@@ -33,11 +40,42 @@ export default function CompaniesPage() {
     try {
       await deleteCompany(id);
       notify.success("删除成功");
+      const newSelectedRowKeys = selectedRowKeys.filter(key => key !== id);
+      updateSelectedInUrl(newSelectedRowKeys);
       load(pagination);
     } catch (err: any) {
       notify.error(err, "删除失败");
     }
   };
+
+  const updateSelectedInUrl = (newSelectedRowKeys: React.Key[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newSelectedRowKeys.length > 0) {
+      params.set('selected', newSelectedRowKeys.join(','));
+    } else {
+      params.delete('selected');
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
+    updateSelectedInUrl(newSelectedRowKeys);
+  };
+
+  const handleCompare = () => {
+    if (selectedRowKeys.length < 2) {
+      message.warning("请至少选择两家公司进行比较");
+      return;
+    }
+    const ids = selectedRowKeys.join(',');
+    router.push(`/companies/compare?ids=${ids}`);
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+  };
+  const hasSelected = selectedRowKeys.length > 0;
 
   const columns = [
     { title: "ID", dataIndex: "id", key: "id" },
@@ -65,10 +103,16 @@ export default function CompaniesPage() {
         <Space>
           <Button onClick={() => load(pagination)}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateVisible(true)}>新建公司</Button>
+          <Button type="primary" onClick={handleCompare} disabled={selectedRowKeys.length < 2}>比较</Button>
         </Space>
       </ActionBar>
 
-      <Table rowKey={(r: any) => r.id} columns={columns} dataSource={data} loading={loading} pagination={pagination} onChange={load} />
+      <div style={{ marginBottom: 16 }}>
+        <span style={{ marginLeft: 8 }}>
+          {hasSelected ? `已选择 ${selectedRowKeys.length} 项` : ''}
+        </span>
+      </div>
+      <Table rowKey={(r: any) => r.id} rowSelection={rowSelection} columns={columns} dataSource={data} loading={loading} pagination={pagination} onChange={load} />
 
       <Modal title="新建公司" open={createVisible} onCancel={() => setCreateVisible(false)} footer={null} destroyOnClose={false}>
         <Form
