@@ -78,6 +78,7 @@ class Company(Base, TimestampMixin):
     balance_sheets = relationship("BalanceSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
     income_sheets = relationship("IncomeSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
     cash_sheets = relationship("CashSheetStatementCore", back_populates="company", cascade="all, delete-orphan")
+    company_metrics = relationship("CompanyMetric", back_populates="company", cascade="all, delete-orphan")
 
 
     def __repr__(self):

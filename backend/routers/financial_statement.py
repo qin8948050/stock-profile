@@ -30,13 +30,29 @@ def get_financial_metric(
 ):
     """
     Get financial metric data for a company, formatted for charting.
-    
-    This endpoint relies on the global exception handlers to manage errors.
-    - Expected errors (e.g., metric not found) are raised as HTTExceptions from the service layer.
-    - Unexpected errors are caught by the generic exception handler and returned as a 500 response.
     """
-    chart_data = service.get_metric_chart_data(company_id, metric_name)
-    return ApiResponse.success(data=chart_data)
+    try:
+        chart_data = service.get_metric_chart_data(company_id, metric_name)
+        return ApiResponse.success(data=chart_data)
+    except ValueError as e:
+        # 配置未找到
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except LookupError as e:
+        # 数据未找到
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        # 其他错误
+        print(f"Unexpected error in get_financial_metric: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching the metric data."
+        )
 
 
 @router.post("/upload", response_model=ApiResponse)

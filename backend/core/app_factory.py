@@ -7,7 +7,8 @@ from core.database import engine
 from core.exceptions import http_exception_handler, generic_exception_handler, validation_exception_handler
 from core.lifespan import lifespan
 from core.middleware import register_middlewares
-from routers import company, financial_statement
+from routers import company, financial_statement, valuation
+
 
 def create_app() -> FastAPI:
     """
@@ -39,5 +40,6 @@ def create_app() -> FastAPI:
     # -----------------------------
     app.include_router(company.router, prefix=config.api.prefix)
     app.include_router(financial_statement.router, prefix=config.api.prefix)
+    app.include_router(valuation.router, prefix=config.api.prefix)
 
     return app

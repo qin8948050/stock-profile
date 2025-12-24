@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List, Type
-from fastapi import HTTPException, status, Depends
+from fastapi import Depends
 
 from schemas.chart import ChartData
 from repositories.financial_repo import BalanceStatementRepository, IncomeStatementRepository, CashStatementRepository, FinancialStatementRepository
@@ -32,10 +32,7 @@ class FinancialMetricService:
         # 1. Get the specific metric configuration class
         metric_config_class = get_metric_config(metric_name)
         if not metric_config_class:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No chart configuration found for metric: '{metric_name}'"
-            )
+            raise ValueError(f"No chart configuration found for metric: '{metric_name}'")
         
         metric_config_instance = metric_config_class()
         
@@ -54,10 +51,7 @@ class FinancialMetricService:
                     break # Data found for this dependency, move to the next one
             
             if not found_data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Data not found for dependency '{dep_metric_name}' of metric '{metric_name}' in any repository."
-                )
+                raise LookupError(f"Data not found for dependency '{dep_metric_name}' of metric '{metric_name}' in any repository.")
 
         # 4. Generate the chart data using the fetched data
         # For single metrics, the map will have one entry. For calculated metrics, it will have multiple.
